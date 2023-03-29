@@ -1,0 +1,8 @@
+ipython
+jupyter
+matplotlib
+numpy
+pandas
+scipy
+multiprocess
+json
