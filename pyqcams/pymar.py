@@ -219,11 +219,6 @@ class QCT(object):
         # Find the new minimum to search for turning points nearby
         vp_eff = lambda r: dV(r) - jeff*(jeff+1)/mu/r**3 
         reNew = fsolve(vp_eff, re)
-        x = np.linspace(.5, 15, 1000)
-        plt.plot(x, vbrot(x))
-        plt.vlines(reNew, 0, 1)
-        plt.hlines(0, 1, 5)
-        plt.show()
         # Solve turning points nearby the equilibrium distance for turning points
         # Check if rotational barrier is too large
         if vbrot(reNew) > 0: 
@@ -585,6 +580,7 @@ class QCT(object):
         bd31 = utils.bound(self.v3,self.dv3,j31_eff[-1],self.mu31, self.re3)
 
         if doplot == True:
+            plt.figure(1)
             plt.plot(self.t, r12, label = 'r12')
             plt.plot(self.t, r32, label = 'r32')
             plt.plot(self.t, r31, label = 'r31')
