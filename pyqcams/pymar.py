@@ -7,7 +7,6 @@ import constants
 import warnings
 import utils
 import json
-import sys
 
 
 class Energy(object):
