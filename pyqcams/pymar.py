@@ -124,13 +124,6 @@ class Energy(object):
     def get_nvib(self):
         return self.n_vib
     
-    def plotV(self,V,E, rm, rp):
-        '''Plot the effective potential and energy. 
-        '''
-        plt.plot(self.x,V(self.x) + self.j*(self.j+1)/2/self.mu/self.x**2) 
-        plt.hlines(E[self.v],rm,rp)
-        plt.show()
-        return
 
 class QCT(object):
     '''Usage:
@@ -580,7 +573,7 @@ class QCT(object):
         bd31 = utils.bound(self.v3,self.dv3,j31_eff[-1],self.mu31, self.re3)
 
         if doplot == True:
-            plt.figure(1)
+            plt.figure()
             plt.plot(self.t, r12, label = 'r12')
             plt.plot(self.t, r32, label = 'r32')
             plt.plot(self.t, r31, label = 'r31')
@@ -589,14 +582,14 @@ class QCT(object):
             plt.ylabel('$r_(a_0)$')
             plt.legend()
 
-            plt.figure(2)
-            plt.plot(self.t,E12,label = 'E12')
-            plt.hlines(bd12,self.t[0],self.t[-1], linestyle = 'dashed',label = 'bd12')
-            plt.plot(self.t,E32,label = 'E32')
-            plt.hlines(bd32,self.t[0],self.t[-1], color = 'orange',linestyle = 'dashed', label = 'bd32')
-            plt.plot(self.t,E31,label = 'E31')
-            plt.hlines(bd31,self.t[0],self.t[-1], color = 'g',linestyle = 'dashed', label = 'bd31')
-            plt.hlines(0,self.t[0],self.t[-1])
+            # plt.figure()
+            # plt.plot(self.t,E12,label = 'E12')
+            # plt.hlines(bd12,self.t[0],self.t[-1], linestyle = 'dashed',label = 'bd12')
+            # plt.plot(self.t,E32,label = 'E32')
+            # plt.hlines(bd32,self.t[0],self.t[-1], color = 'orange',linestyle = 'dashed', label = 'bd32')
+            # plt.plot(self.t,E31,label = 'E31')
+            # plt.hlines(bd31,self.t[0],self.t[-1], color = 'g',linestyle = 'dashed', label = 'bd31')
+            # plt.hlines(0,self.t[0],self.t[-1])
             # # plt.plot(self.t, self.v1(r12), label = 'v12') # potential energy 
             # # plt.plot(self.t, self.v2(r32), label = 'v32')
             # # plt.plot(self.t, self.v3(r31), label = 'v31')

@@ -81,6 +81,7 @@ def get_results(a):
 
 def save_long(n_traj,cpus,calc,out_file):
     '''
+    Runs parallel trajectories.
     Saves a long version of the data; one line per trajectory.
     Stores all input & output data.
 
@@ -103,6 +104,7 @@ def save_long(n_traj,cpus,calc,out_file):
 
 def save_short(n_traj,cpus,calc,out_file):
     '''
+    Runs parallel trajectories.
     Saves a short version of the data; sums up the counts so one line per (E,b) set.
     Use this if input data & distributions are not needed.
 
@@ -121,8 +123,8 @@ def save_short(n_traj,cpus,calc,out_file):
         for res in event:
             result.append(res.get())
     df = pd.DataFrame(result)
-    clist = ['e','b','h2','cah1','cah2','diss']
-    counts = df.loc[:,clist].groupby(['e','b']).sum() # sum counts
+    clist = ['e','b''q','r1','r2','diss', 'comp']
+    counts = df.loc[:,:'comp'].groupby(['e','b']).sum() # sum counts
     counts.to_csv(out_file, mode = 'a', 
                   header = os.path.isfile(out_file) == False or os.path.getsize(out_file) == 0)
     return

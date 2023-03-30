@@ -74,7 +74,14 @@ def traj_3d(traj):
     ax.set_zlabel('Z')
     return ax
 
-def traj_gif(traj):
+def traj_gif(traj, theta, phi):
+    '''
+    Create an animation of a trajectory.
+    Inputs:
+    traj, trajectory object
+    theta, initial viewing angle theta
+    phi, initial viewing angle phi
+    '''
     def update_lines(num, dataLines, lines):
         for line, data in zip(lines, dataLines):
             # NOTE: there is no .set_data() for 3 dim data...
@@ -110,8 +117,8 @@ def traj_gif(traj):
     ax.set_zlim3d([min(min(r1[2]),min(r2[2]),min(r3[2]))/2, max(max(r1[2]),max(r2[2]),max(r3[2]))])
     ax.set_zlabel('Z')
 
-    ax.set_title('3D Test')
-    ax.view_init(-160,60)
+#     ax.set_title('3D Test')
+    ax.view_init(theta,phi)
 
     # Creating the Animation object
     line_ani = animation.FuncAnimation(fig, update_lines, len(t), fargs=(data, lines),
@@ -119,28 +126,3 @@ def traj_gif(traj):
     plt.show()
     return ax, line_ani
 
-
-def plot_V(pot, name, mu, ax, **kwargs):
-    '''Plot potential.
-    pot, class
-        potential builder class in pymar (Potential())
-    name, string
-        name of potential (morse, lj, buck)
-    kwargs,
-        potential parameters
-    '''
-    prop = kwargs
-    xmin = prop['xmin']
-    xmax = prop['xmax']
-    if name == 'morse':
-        prop = prop['morse']
-        prop['alpha'] = prop['we']*np.sqrt(mu/2/prop['de'])
-        mol_V, mol_dV = pot.morse(**prop)
-    elif name == 'lj':
-        prop = prop['lj']
-        mol_V, mol_dV = pot.lj(**prop)
-    elif name == 'buck':
-        prop = prop['buck']
-        mol_V, mol_dV, xmin= pot.buckingham(**prop)
-
-    pass
