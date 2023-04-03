@@ -25,7 +25,7 @@ mu123 = m3*(m1+m2)/mtot
 
 
 ```python
-df = pd.read_csv(f'{path}/fv0j0.csv') # 10000 trajectories per impact parameter
+df = pd.read_csv(f'../QCT/qcams/new_data/fv0j0.csv') # 10000 trajectories per impact parameter
 df = df[df['v'] >= 0]
 stats = df.iloc[:,:7].groupby(['e','b']).sum()
 weights = df.drop(df.iloc[:,9:], axis=1)
