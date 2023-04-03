@@ -1,6 +1,10 @@
 # PyQCAMS
 Python Quasi-Classical Atom-Molecule Scattering, a Python package for atom-molecule scattering within the quasi-classical trajectory approach. 
 
+# Installation
+```python
+pip install PyQCAMS
+``` 
 
 # Usage
 An example of usage is as written in `sim.py`. This runs trajectories in parallel, and loops over a list of impact parameters. 
