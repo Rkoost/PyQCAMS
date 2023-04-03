@@ -109,6 +109,8 @@ def save_short(n_traj,cpus,calc,out_file):
     Saves a short version of the data; sums up the counts so one line per (E,b) set.
     Use this if input data & distributions are not needed.
 
+    Set cpus = 1 for serial calculation.
+
     n_traj, int
         number of trajectories
     cpus, int
