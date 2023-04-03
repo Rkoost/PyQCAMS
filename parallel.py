@@ -1,10 +1,10 @@
-import pymar
+import pyqcams.pymar as pymar
 import numpy as np
-import utils
+import pyqcams.util as utils
 import os
 
 if __name__ == '__main__':
-    calc = pymar.start('pyqcams/inputs.json') # Calculated parameters for main function
+    calc = pymar.start('inputs.json') # Calculated parameters for main function
 
     n_traj = 10 # Number of trajectories
     out_file = f'example/results_short.csv'

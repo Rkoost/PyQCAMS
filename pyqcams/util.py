@@ -1,11 +1,11 @@
-import constants
 import numpy as np
 import warnings
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 import multiprocess as mp 
 import pandas as pd
-import pymar
+from . import pymar
+from .constants import *
 import os 
 
 def gaus(vp , vt, s=0.1):
@@ -51,7 +51,7 @@ def get_results(a):
     a, object
         trajectory object containing relevant attributes
     '''
-    results = {'e': a.e0/constants.cEK2H,
+    results = {'e': a.e0/cEK2H,
             'b': a.b,
             'q': a.count[0],
             'r1': a.count[1],

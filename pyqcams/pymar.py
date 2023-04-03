@@ -2,10 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp, quad
 from scipy.optimize import root_scalar, fsolve
-from scipy.interpolate import interp1d
-import constants
+from scipy import constants
 import warnings
-import utils
+from . import util, constants
 import json
 
 
@@ -567,9 +566,9 @@ class QCT(object):
         K31 = p31**2/2/self.mu31
 
     
-        bd12 = utils.bound(self.v1,self.dv1,j12_eff[-1],self.mu12, self.re1)
-        bd32 = utils.bound(self.v2,self.dv2,j32_eff[-1],self.mu32, self.re2)
-        bd31 = utils.bound(self.v3,self.dv3,j31_eff[-1],self.mu31, self.re3)
+        bd12 = util.bound(self.v1,self.dv1,j12_eff[-1],self.mu12, self.re1)
+        bd32 = util.bound(self.v2,self.dv2,j32_eff[-1],self.mu32, self.re2)
+        bd31 = util.bound(self.v3,self.dv3,j31_eff[-1],self.mu31, self.re3)
 
         if doplot == True:
             plt.figure()
@@ -634,7 +633,7 @@ class QCT(object):
                     nd += 1
                 else:
                     vt = np.round(vp)
-                    w = utils.gaus(vp,vt)
+                    w = util.gaus(vp,vt)
                     # print(f'H2 final state: {vt,w,j12_eff}')
                     j_eff = j12_eff[-1]
                     n12 += 1
@@ -652,7 +651,7 @@ class QCT(object):
                     nd += 1
                 else:                
                     vt = np.round(vp)
-                    w = utils.gaus(vp,vt)
+                    w = util.gaus(vp,vt)
                     # print(f'CaH(2) final state: {vt, w, j32_eff}')
                     j_eff = j32_eff[-1]
                     n32 += 1
@@ -670,7 +669,7 @@ class QCT(object):
                     nd += 1
                 else:                
                     vt = np.round(vp)
-                    w = utils.gaus(vp,vt)
+                    w = util.gaus(vp,vt)
                     # print(f'CaH(1) final state: {vt, w, j31_eff}')
                     j_eff = j31_eff[-1]
                     n31 += 1
@@ -855,13 +854,14 @@ def main(plot = False,**kwargs):
     a.runT(doplot = plot)
     # result = {'d_e': a.delta_e}
     # return result
-    return utils.get_results(a)
+    return util.get_results(a)
 
 if __name__ == '__main__':
-    inputs = start('inputs.json')
-    # for i in range(10):
-    #     a = QCT(**inputs)
-    #     a.runT()
-    #     with open('e_cons.csv','a') as f:
-    #         f.write(f'{a.delta_e}\n')
-    print(main(plot = True, **inputs))
+    # inputs = start('inputs.json')
+    # # for i in range(10):
+    # #     a = QCT(**inputs)
+    # #     a.runT()
+    # #     with open('e_cons.csv','a') as f:
+    # #         f.write(f'{a.delta_e}\n')
+    # print(main(plot = True, **inputs))
+    print(constants.angstrom/constants.physical_constants['Bohr radius'][0])
