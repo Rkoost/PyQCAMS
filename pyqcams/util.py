@@ -77,6 +77,7 @@ def get_results(a):
             'p1y': a.f_p[1],
             'p1z': a.f_p[2],
             'tf': a.t[-1]}
+    
     return results
 
 def save_long(n_traj,cpus,calc,out_file):
@@ -123,7 +124,6 @@ def save_short(n_traj,cpus,calc,out_file):
         for res in event:
             result.append(res.get())
     df = pd.DataFrame(result)
-    clist = ['e','b''q','r1','r2','diss', 'comp']
     counts = df.loc[:,:'comp'].groupby(['e','b']).sum() # sum counts
     counts.to_csv(out_file, mode = 'a', 
                   header = os.path.isfile(out_file) == False or os.path.getsize(out_file) == 0)
