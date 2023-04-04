@@ -694,7 +694,7 @@ class Potential(object):
     """
     Potential functions.
     """
-    def morse(self, de = 1.,alpha = 1.,re = 1., we = .1):
+    def morse(self, de = 1.,alpha = 1.,re = 1.):
         '''Usage:
                 V = morse(**kwargs)
         
@@ -708,8 +708,6 @@ class Potential(object):
             returned from eVib function
         re, float
             equilibrium length
-        we, float
-            vibrational frequency
         '''
         V = lambda r: de*(1-np.exp(-alpha*(r-re)))**2 - de
         dV = lambda r: 2*alpha*de*(1-np.exp(-alpha*(r-re)))*np.exp(-alpha*(r-re))
@@ -803,7 +801,6 @@ def start(input_file):
     vF = Potential()
     # Create energy object according to chosen potential
     if potential_AB == 'morse':
-        mol1['alpha'] = mol1['we']*np.sqrt(m12/2/mol1['de'])
         mol1_V, mol1_dV = vF.morse(**mol1)
     elif potential_AB == 'lj':
         mol1_V, mol1_dV = vF.lj(**mol1)
@@ -818,7 +815,6 @@ def start(input_file):
     #           Choose from morse, lj, buck.')
 
     if potential_BC == 'morse':
-        mol2['alpha'] = mol2['we']*np.sqrt(m23/2/mol2['de'])
         mol2_V, mol2_dV = vF.morse(**mol2)
     elif potential_BC == 'lj':
         mol2_V, mol2_dV = vF.lj(**mol2)
@@ -829,7 +825,6 @@ def start(input_file):
               Choose from morse, lj, buck.')
 
     if potential_CA == 'morse':
-        mol3['alpha'] = mol3['we']*np.sqrt(m31/2/mol3['de'])
         mol3_V, mol3_dV = vF.morse(**mol3)
     elif potential_CA == 'lj':
         mol3_V, mol3_dV = vF.lj(**mol3)
@@ -857,11 +852,9 @@ def main(plot = False,**kwargs):
     return util.get_results(a)
 
 if __name__ == '__main__':
-    # inputs = start('inputs.json')
+    inputs = start('inputs.json')
     # # for i in range(10):
     # #     a = QCT(**inputs)
     # #     a.runT()
     # #     with open('e_cons.csv','a') as f:
     # #         f.write(f'{a.delta_e}\n')
-    # print(main(plot = True, **inputs))
-    print(constants.angstrom/constants.physical_constants['Bohr radius'][0])
