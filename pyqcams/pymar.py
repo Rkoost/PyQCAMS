@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp, quad
 from scipy.optimize import root_scalar, fsolve
-from scipy import constants
 import warnings
 from . import util, constants
 import json
@@ -852,9 +851,4 @@ def main(plot = False,**kwargs):
     return util.get_results(a)
 
 if __name__ == '__main__':
-    inputs = start('inputs.json')
-    # # for i in range(10):
-    # #     a = QCT(**inputs)
-    # #     a.runT()
-    # #     with open('e_cons.csv','a') as f:
-    # #         f.write(f'{a.delta_e}\n')
+    pass
