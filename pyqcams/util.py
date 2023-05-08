@@ -1,6 +1,7 @@
 import numpy as np
 import warnings
 from scipy.optimize import fsolve
+from scipy.interpolate import InterpolatedUnivariateSpline
 import matplotlib.pyplot as plt
 import multiprocess as mp 
 import pandas as pd
@@ -163,3 +164,32 @@ def trace(a):
     ax.set_zlabel('Z')
     plt.show()
     return 
+
+def numToV(file, col = 1, sep = ',', k = 3):
+    '''
+    Convert pdf table to potential function and first derivative.
+    Assumes positions in column 0.
+
+    Inputs:
+
+    file, str
+        path to pdf file
+    col, int, optional
+        column containing energies
+    sep, str, optional
+        delimiter to use. Use '\s+' for tab-separated. 
+    k, int, optional
+        degree for spline
+    '''
+    types = ['.csv','.txt','.dat']
+    split = os.path.splitext(f'{file}')
+    filetype = split[1]
+    if filetype in types:
+        df = pd.read_csv(f'{file}',header = None, sep = sep)
+    else: 
+        print('Please specify filetype. Choose from "csv", "dat", or "txt".')
+    num_x = np.array([float(i) for i in df[0][:].values.tolist()])
+    num_y = np.array([float(i) for i in df[col][:].values.tolist()])
+    num_V = InterpolatedUnivariateSpline(num_x,num_y, k = k)
+    num_dV = num_V.derivative()
+    return num_V, num_dV
