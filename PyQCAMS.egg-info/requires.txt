@@ -1,6 +1,0 @@
-ipython
-matplotlib
-numpy
-pandas
-scipy
-multiprocess
