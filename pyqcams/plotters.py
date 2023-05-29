@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import mpl_toolkits.mplot3d.axes3d as p3
-from .constants import *
+from . import constants
 
 def traj_plt(traj, ax, title = True, legend = True):
     '''
@@ -13,7 +13,7 @@ def traj_plt(traj, ax, title = True, legend = True):
     ax, axis labele
     '''
     r = traj.r
-    t = traj.t*ttos*10e12 # Convert a.u. to ns 
+    t = traj.t*constants.ttos*10e12 # Convert a.u. to ns 
     m1,m2,m3 = traj.m1, traj.m2, traj.m3
     mtot = m1 + m2 + m3
 
@@ -32,7 +32,7 @@ def traj_plt(traj, ax, title = True, legend = True):
     if legend == True:
         ax.legend()
     if title == True:
-        ax.set_title(f'Energy: {traj.e0/cEK2H}K')
+        ax.set_title(f'Energy: {traj.e0/constants.cEK2H}K')
 
 def plot_e(traj, ax):
     ax.plot(traj.t,traj.E12,label = 'E12')
@@ -49,6 +49,9 @@ def plot_e(traj, ax):
 
 
 def traj_3d(traj):
+    '''
+    Make a 3-d trace of the trajectory.
+    '''
     r = traj.r
     m1,m2,m3 = traj.m1, traj.m2, traj.m3
     mtot = m1 + m2 + m3

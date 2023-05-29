@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp, quad
 from scipy.optimize import root_scalar, fsolve
 import warnings
-from . import util, constants
+from pyqcams import util, constants
 import json
 
 
@@ -72,32 +72,33 @@ class Energy(object):
     
     def turningPts(self, V, re, v=0):
         ''' Setter function for turning points, period, & n of energy level of a given (v,j)
-        Evj, list
-            energy spectrum
         V, function
             potential
-        mu, float
-            reduced mass
         re, float
             equilibrium length of molecule
         v, int
             vibrational quantum number
-        b, function
-            buckingham potentential 
-            (if V is piecewise, root_scalar doesn't work.
-            However, DVR must still be done on the piecewise function.)
         '''
         self.v = v # Assign the molecules vibrational number
         self.evj = self.eDVR(V) 
         vbrot = lambda r: -self.j*(self.j+1)/2/self.mu/(r**2)- V(r)+ self.evj[self.v]
-        # x = np.linspace(.5,10,1000)
-        # plt.plot(x,V(x))
-        # plt.hlines(evj[0], 0, 5)
-        # plt.show()
-        # print(self.xmin)
-        rm = root_scalar(vbrot,bracket = [self.xmin,re]).root
-        rp = root_scalar(vbrot,bracket = [re,self.xmax]).root
-        
+        x = np.linspace(self.xmin,self.xmax,1000)
+        try:
+            rm = root_scalar(vbrot,bracket = [self.xmin,re]).root
+            rp = root_scalar(vbrot,bracket = [re,self.xmax]).root
+        except:
+            print('Root solver failed. Try adjusting your guess equilibrium point.\n'
+                  'It should fall between the classical turning points.')
+            fig = input('Would you like to see a plot of your potential? '
+                        'Type "y" for yes, or "n" for no: \n')
+            if fig == 'y':
+                # Show re guess compared with elev
+                plt.plot(x,V(x))
+                plt.plot(re,V(re), marker = 'o')
+                plt.hlines(self.evj[self.v], 0, 5)
+                plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
+                plt.show()
+            quit()
         # Integrate to solve for tau, n_vib
         tau = quad(lambda x: 1/np.sqrt(vbrot(x)),rm,rp)[0]
         vib = quad(lambda x: np.sqrt(vbrot(x)),rm,rp)[0]
@@ -685,8 +686,6 @@ class QCT(object):
                     p2x[-1], p2y[-1], p2z[-1]]
         self.delta_e = En[-1]-En[0]
         self.delta_p = Ln[-1] - Ln[0]
-        # return count, r, t
-        # return count
         return
 
 class Potential(object):
@@ -788,50 +787,56 @@ def start(input_file):
     potential_AB = data['potential_AB'] # which potential
     potential_BC = data['potential_BC']
     potential_CA = data['potential_CA']
-    mol1 = data['potential_params']["AB"][f"{potential_AB}"]  # potential parameters
-    mol2 = data['potential_params']["BC"][f"{potential_BC}"]
-    mol3 = data['potential_params']["CA"][f"{potential_CA}"]
-    xmin = data['potential_params']["AB"]['xmin'] 
-    xmax = data['potential_params']["AB"]['xmax']
+    vList = ['morse','buck','lj']
+    vF = Potential()
     m1,m2,m3 = data['masses'].values() # masses
     m12 = m1*m2/(m1+m2)
-    m23 = m2*m3/(m2+m3)
-    m31 = m1*m3/(m1+m3)
-    vF = Potential()
-    # Create energy object according to chosen potential
-    if potential_AB == 'morse':
-        mol1_V, mol1_dV = vF.morse(**mol1)
-    elif potential_AB == 'lj':
-        mol1_V, mol1_dV = vF.lj(**mol1)
-    elif potential_AB == 'buck':
-        mol1_V, mol1_dV, xmin= vF.buckingham(**mol1)
 
+    if potential_AB in vList:
+        mol1 = data['potential_params']["AB"][f"{potential_AB}"]  # potential parameters
+        if potential_AB == 'morse':
+                mol1_V, mol1_dV = vF.morse(**mol1)
+        elif potential_AB == 'lj':
+            mol1_V, mol1_dV = vF.lj(**mol1)
+        elif potential_AB == 'buck':
+            mol1_V, mol1_dV, xmin= vF.buckingham(**mol1)
+        if xmin == None:
+            xmin = data['potential_params']["AB"]['xmin'] 
+        xmax = data['potential_params']["AB"]['xmax']
+    else: # numerical
+        mol1 = {}
+        xvals, mol1_V, mol1_dV, mol1['re'] = util.numToV(f'{potential_AB}') # Find V, dV via spline
+        xmin = min(xvals)
+        xmax = max(xvals)
+
+    # Create energy object according to chosen potential
     AB = Energy(mu=m12, npts=data['potential_params']["AB"]['npts'], xmin = xmin,
                 xmax = xmax, j = data['ji'])
     AB.turningPts(mol1_V,mol1['re'], v= data['vi']) # Assign attributies evals, rm, rp
-    # else:
-    #     print('This potential is not available: \
-    #           Choose from morse, lj, buck.')
-
-    if potential_BC == 'morse':
-        mol2_V, mol2_dV = vF.morse(**mol2)
-    elif potential_BC == 'lj':
-        mol2_V, mol2_dV = vF.lj(**mol2)
-    elif potential_BC == 'buck':
-        mol2_V, mol2_dV, _ = vF.buckingham(**mol2)
+        
+    if potential_BC in vList:
+        mol2 = data['potential_params']["BC"][f"{potential_BC}"]
+        if potential_BC == 'morse':
+            mol2_V, mol2_dV = vF.morse(**mol2)
+        elif potential_BC == 'lj':
+            mol2_V, mol2_dV = vF.lj(**mol2)
+        elif potential_BC == 'buck':
+            mol2_V, mol2_dV, _ = vF.buckingham(**mol2)
     else:
-        print('This potential is not available: \
-              Choose from morse, lj, buck.')
+        mol2 = {}
+        _, mol2_V, mol2_dV, mol2['re'] = util.numToV(f'{potential_BC}')
 
-    if potential_CA == 'morse':
-        mol3_V, mol3_dV = vF.morse(**mol3)
-    elif potential_CA == 'lj':
-        mol3_V, mol3_dV = vF.lj(**mol3)
-    elif potential_CA == 'buck':
-        mol3_V, mol3_dV, _ = vF.buckingham(**mol3)
+    if potential_CA in vList:
+        mol3 = data['potential_params']["CA"][f"{potential_CA}"]
+        if potential_CA == 'morse':
+            mol3_V, mol3_dV = vF.morse(**mol3)
+        elif potential_CA == 'lj':
+            mol3_V, mol3_dV = vF.lj(**mol3)
+        elif potential_CA == 'buck':
+            mol3_V, mol3_dV, _ = vF.buckingham(**mol3)
     else:
-        print('This potential is not available: \
-              Choose from morse, lj, buck.')
+        mol3 = {}
+        _, mol3_V, mol3_dV, mol3['re'] = util.numToV(f'{potential_CA}')
 
     # Calculate relevant attributes
     inputs = {'m1' : m1, 'm2': m2, 'm3': m3, 
@@ -851,4 +856,5 @@ def main(plot = False,**kwargs):
     return util.get_results(a)
 
 if __name__ == '__main__':
-    pass
+    calc = start('example/h2_ca/inputs.json')
+    print(main(plot = True, **calc))

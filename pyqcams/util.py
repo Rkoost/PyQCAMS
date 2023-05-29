@@ -1,13 +1,10 @@
-import numpy as np
+import os
 import warnings
+import numpy as np
 from scipy.optimize import fsolve
 from scipy.interpolate import InterpolatedUnivariateSpline
-import matplotlib.pyplot as plt
-import multiprocess as mp 
 import pandas as pd
-from . import pymar
-from .constants import *
-import os 
+from pyqcams import constants
 
 def gaus(vp , vt, s=0.1):
             ''' Gaussian function used for Gaussian Binning of final vibrational states.
@@ -52,144 +49,94 @@ def get_results(a):
     a, object
         trajectory object containing relevant attributes
     '''
-    results = {'e': a.e0/cEK2H,
-            'b': a.b,
-            'q': a.count[0],
-            'r1': a.count[1],
-            'r2': a.count[2],
-            'diss': a.count[3],
-            'comp': a.count[4],
-            'v': a.f_state[0],
-            'w': a.f_state[1],
-            'j': a.f_state[2],
-            'd_i': a.d,
-            'theta': a.ang[0], 
+    results = {'e': a.e0/constants.cEK2H, # energy
+            'b': a.b, # impact param   
+            'q': a.count[0], # quench
+            'r1': a.count[1], # reaction 1
+            'r2': a.count[2], # reaction 2
+            'diss': a.count[3],  # dissociation
+            'comp': a.count[4], # complex
+            'v': a.f_state[0], # final vib num
+            'w': a.f_state[1], # weight
+            'j': a.f_state[2], # final j
+            'd_i': a.d, # initial distance
+            'theta': a.ang[0], # initial angles
             'phi': a.ang[1], 
             'eta': a.ang[2], 
-            'n_i': a.n_vib,
-            'j_i': a.j,
-            'rho1x': a.r[0][-1],
+            'n_i': a.n_vib, # initial vib num
+            'j_i': a.j, # initial j 
+            'rho1x': a.r[0][-1], # final positions
             'rho1y': a.r[1][-1],
             'rho1z': a.r[2][-1],
             'rho2x': a.r[0][-1],
             'rho2y': a.r[1][-1],
             'rho2z': a.r[2][-1],
-            'p1x': a.f_p[0],
+            'p1x': a.f_p[0], # final momentum 
             'p1y': a.f_p[1],
             'p1z': a.f_p[2],
-            'tf': a.t[-1]}
+            'p2x': a.f_p[3],
+            'p2y': a.f_p[4],
+            'p2z': a.f_p[5],
+            'tf': a.t[-1]} # final time
     
     return results
 
-def save_long(n_traj,cpus,calc,out_file):
-    '''
-    Runs parallel trajectories.
-    Saves a long version of the data; one line per trajectory.
-    Stores all input & output data.
-
-    n_traj, int
-        number of trajectories
-    cpus, int
-        number of cpus for parallel calculation
-    calc, dict
-        output from pymar.start() function
-    out_file, string
-        output file name
-    '''
-    with mp.Pool(processes = cpus) as p:
-        event = [p.apply_async(pymar.main, kwds = (calc)) for i in range(n_traj)]
-        for res in event:
-            df = pd.DataFrame([res.get()])
-            df.to_csv(out_file, mode = 'a', index = False, 
-                    header = os.path.isfile(out_file) == False or os.path.getsize(out_file) == 0)
-    return
-
-def save_short(n_traj,cpus,calc,out_file):
-    '''
-    Runs parallel trajectories.
-    Saves a short version of the data; sums up the counts so one line per (E,b) set.
-    Use this if input data & distributions are not needed.
-
-    Set cpus = 1 for serial calculation.
-
-    n_traj, int
-        number of trajectories
-    cpus, int
-        number of cpus for parallel calculation
-    calc, dict
-        output from pymar.start() function
-    out_file, string
-        output file name
-    '''
-    result = []
-    with mp.Pool(processes = cpus) as p:
-        event = [p.apply_async(pymar.main, kwds = (calc)) for i in range(n_traj)]
-        for res in event:
-            result.append(res.get())
-    df = pd.DataFrame(result)
-    counts = df.loc[:,:'comp'].groupby(['e','b']).sum() # sum counts
-    counts.to_csv(out_file, mode = 'a', 
-                  header = os.path.isfile(out_file) == False or os.path.getsize(out_file) == 0)
-    return
-
-
-def trace(a):
-    '''
-    Make 3-d trace of the trajectory
-    '''
-    # Coordinate transformation
-    m1,m2,m3 = a.m1, a.m2, a.m3
-    r = a.r
-
-    mtot = m1 + m2 + m3
-    c1 = m1/(m1+m2)
-    c2 = m2/(m1+m2)
-    r1 = np.array([-c2*r[i] - m3/mtot*r[i+3] for i in range(0,3)]) #x,y,z for particle 1
-    r2 = np.array([c1*r[i]-m3/mtot*r[i+3] for i in range(0,3)])
-    r3 = np.array([(m1+m2)/mtot*r[i+3] for i in range(0,3)])
-
-
-    ax = plt.axes(projection='3d')
-    ax.plot3D(r1[0], r1[1], r1[2], 'g')
-    ax.plot3D(r2[0], r2[1], r2[2], 'orange')
-    ax.plot3D(r3[0], r3[1], r3[2], 'r')
-    ax.scatter3D(r1[0][0], r1[1][0], r1[2][0],marker = 'o',color = 'g')
-    ax.scatter3D(r2[0][0], r2[1][0], r2[2][0],marker = 'o',color = 'orange')
-    ax.scatter3D(r3[0][0], r3[1][0], r3[2][0],marker = 'o',color = 'r')
-    ax.scatter3D(r1[0][-1], r1[1][-1], r1[2][-1],marker = '^',color = 'g')
-    ax.scatter3D(r2[0][-1], r2[1][-1], r2[2][-1],marker = '^',color = 'orange')
-    ax.scatter3D(r3[0][-1], r3[1][-1], r3[2][-1],marker = '^',color = 'r')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    plt.show()
-    return 
-
-def numToV(file, col = 1, sep = ',', k = 3):
+def numToV(file):
     '''
     Convert pdf table to potential function and first derivative.
-    Assumes positions in column 0.
+    Assumes positions in column 0, energy in column 1.
 
     Inputs:
 
     file, str
         path to pdf file
-    col, int, optional
-        column containing energies
-    sep, str, optional
-        delimiter to use. Use '\s+' for tab-separated. 
-    k, int, optional
-        degree for spline
+
+    Outputs:
+    num_x, list
+        x values of potential
+    num_V, function
+        interpolated potential
+    num_dV, function
+        interpolated potential derivative
+    num_re, float
+        equilibrium point (min of potential)
     '''
     types = ['.csv','.txt','.dat']
     split = os.path.splitext(f'{file}')
     filetype = split[1]
     if filetype in types:
-        df = pd.read_csv(f'{file}',header = None, sep = sep)
+        try:
+            # comma separated
+            df = pd.read_csv(f'{file}',header = None)
+            num_x = np.array([float(i) for i in df[0][:].values.tolist()])
+            num_y = np.array([float(i) for i in df[1][:].values.tolist()])
+        except:
+            try:
+                # tab separated
+                df = pd.read_csv(f'{file}',header = None, sep = '\s+')
+                num_x = np.array([float(i) for i in df[0][:].values.tolist()])
+                num_y = np.array([float(i) for i in df[1][:].values.tolist()])
+            except:
+                print('Please use either comma or tab separated data.')
+                quit()
     else: 
         print('Please specify filetype. Choose from "csv", "dat", or "txt".')
-    num_x = np.array([float(i) for i in df[0][:].values.tolist()])
-    num_y = np.array([float(i) for i in df[col][:].values.tolist()])
-    num_V = InterpolatedUnivariateSpline(num_x,num_y, k = k)
+    num_y -= num_y[-1] # Shift values to make curve approach 0 by setting final point to 0
+    num_V = InterpolatedUnivariateSpline(num_x,num_y, k = 4, ext = 'raise') # Use k = 4 to find roots of derivative
     num_dV = num_V.derivative()
-    return num_V, num_dV
+    cr_pts = num_dV.roots()
+    cr_pts = np.append(cr_pts, (num_x[0], num_x[-1]))  # also check the endpoints of the interval
+    cr_vals = num_V(cr_pts)
+    min_index = np.argmin(cr_vals)
+    num_re = cr_pts[min_index] # Equilibrium distance
+    return num_x, num_V, num_dV, num_re
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    # num_x, num_V, num_dV, num_re = numToV(r"C:\Users\Rian\Documents\research\jesusgroup\cah_pec\cah_au.txt")
+    num_x, num_V, num_dV, num_re = numToV(r"C:\Users\Rian\Documents\research\jesusgroup\cah_pec\h2_pec.dat")
+    x = np.linspace(min(num_x),max(num_x),500)
+    # plt.scatter(num_x, num_y)
+    plt.plot(x, num_V(x))
+    plt.plot(num_re, num_V(num_re), marker = 'o')
+    plt.show()
