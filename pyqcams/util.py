@@ -131,12 +131,3 @@ def numToV(file):
     num_re = cr_pts[min_index] # Equilibrium distance
     return num_x, num_V, num_dV, num_re
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    # num_x, num_V, num_dV, num_re = numToV(r"C:\Users\Rian\Documents\research\jesusgroup\cah_pec\cah_au.txt")
-    num_x, num_V, num_dV, num_re = numToV(r"C:\Users\Rian\Documents\research\jesusgroup\cah_pec\h2_pec.dat")
-    x = np.linspace(min(num_x),max(num_x),500)
-    # plt.scatter(num_x, num_y)
-    plt.plot(x, num_V(x))
-    plt.plot(num_re, num_V(num_re), marker = 'o')
-    plt.show()
