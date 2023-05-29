@@ -15,6 +15,6 @@ if __name__ == '__main__':
     # loop over all impact parameters
     for b in bvals:
         calc['b'] = b # set new impact parameter
-        # utils.save_long(n_traj, cpus, calc, f'{out_file}') # Uncomment for long output
+        #psave.save_long(n_traj, cpus, calc, f'{out_file}') # Uncomment for long output
         psave.save_short(n_traj, cpus, calc, f'{out_file}') # Uncomment for short output
     
