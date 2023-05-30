@@ -4,7 +4,6 @@ import os
 from pyqcams import pymar, psave
 
 if __name__ == '__main__':
-    print(os.getcwd())
     calc = pymar.start('inputs.json') # Calculated parameters for main function
 
     n_traj = 10 # Number of trajectories

@@ -5,9 +5,9 @@
     "b": 0,
     "r0": 10,
     "seed": null,
-    "potential_AB": "h2_pec.dat",
-    "potential_BC": "buck",
-    "potential_CA": "buck",
+    "potential_AB": "morse",
+    "potential_BC": "morse",
+    "potential_CA": "morse",
     "masses":{
         "ma": 1837.47165336,
         "mb": 1837.47165336,
@@ -15,7 +15,7 @@
     },
     "int_params":{
         "t_stop": 15,
-        "r_stop": 50,
+        "r_stop": 45,
         "a_tol": 1E-8,
         "r_tol": 1E-9
     },
@@ -23,7 +23,7 @@
         "AB":{
             "npts": 1000,
             "xmin": 0.8,
-            "xmax": 10,
+            "xmax": 20,
             "morse":{
                 "re" : 1.40104284795, 
                 "de" : 0.16456603489,
@@ -46,7 +46,7 @@
         },
         "BC":{
             "npts": 1000,
-            "xmin": 1,
+            "xmin": 2,
             "xmax": 14,
             "morse":
             {
@@ -71,7 +71,7 @@
         },
         "CA":{
             "npts": 1000,
-            "xmin": 1,
+            "xmin": 2,
             "xmax": 14,
             "morse":
             {
