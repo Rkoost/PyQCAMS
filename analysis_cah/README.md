@@ -1,2 +1,0 @@
-# Analysis example
-The file `analysis.md` is a typical analysis of the output files from many trajectories using `pandas`. These files contain ~ $10^6$ lines and are large, so are not hosted on GitHub. 
