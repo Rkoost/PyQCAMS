@@ -427,12 +427,6 @@ class QCT(object):
             -self.dv2(r32)*r32drho2y-self.dv3(r31)*r31drho2y,
             -self.dv2(r32)*r32drho2z-self.dv3(r31)*r31drho2z]
 
-        # No atom-molecule interaction
-        # f = [p1x/mu12, p1y/mu12, p1z/mu12, p2x/mu123, p2y/mu123, p2z/mu123,
-        #     -H2_Vdr(r12)*r12drho1x,
-        #     -H2_Vdr(r12)*r12drho1y,
-        #     -H2_Vdr(r12)*r12drho1z,
-        #     0,0,0]
         return f 
 
     
@@ -732,10 +726,9 @@ class Potential(object):
         '''Usage:
             V = buckingham(**kwargs)
         Buckingham potentials tend to come back down at low r. 
-        We fix this by adding a piecewise wall.
+        We fix this by imposing xmin at the turning point "max."
         Return a one-dimensional Buckingham potential:
         V(r) = a*exp(-b*r) - c6/r^6 for r > r_x
-        V(r) = 
 
         Keyword arguments:
         a, float
@@ -750,6 +743,14 @@ class Potential(object):
             minimum of potential (cutoff at local maximum)        
         xmax, float
             maximum of potential
+
+        Outputs:
+        Buck, function
+            buckingham potential
+        dBuck, function
+            derivative of buckingham potential
+        xi, float
+            minimum x-value where Buck is defined
         '''
         Buck = lambda r: a*np.exp(-b*r) - c6/r**6
         dBuck = lambda r: -a*b*np.exp(-b*r) + 6*c6/r**7
@@ -757,20 +758,6 @@ class Potential(object):
 
         # Find the maximum of potential
         xi = fsolve(dBuck,max)
-        # xi = fsolve(ddBuck,ip)
-        # m =  dBuck(xi)
-        # yi = Buck(xi)
-        # Wall = lambda r:2*m*r + (yi - 2*m*xi)
-        # dWall =  lambda r: 2*m
-
-        # # Define piecewise nd_array within interpolation bounds
-        # x = np.linspace(xmin,xmax,n)
-        # Vx = np.piecewise(x,[x<xi,x>=xi], [Wall,Buck])
-        # dVx = np.piecewise(x,[x<xi,x>=xi], [dWall,dBuck])
-
-        # #Interpolate the nd array into a new function
-        # V = interp1d(x,Vx)
-        # dV = interp1d(x,dVx)
         
         return Buck, dBuck, xi
     
@@ -791,6 +778,7 @@ def start(input_file):
     vF = Potential()
     m1,m2,m3 = data['masses'].values() # masses
     m12 = m1*m2/(m1+m2)
+    xmin = None
 
     if potential_AB in vList:
         mol1 = data['potential_params']["AB"][f"{potential_AB}"]  # potential parameters
@@ -812,8 +800,7 @@ def start(input_file):
     # Create energy object according to chosen potential
     AB = Energy(mu=m12, npts=data['potential_params']["AB"]['npts'], xmin = xmin,
                 xmax = xmax, j = data['ji'])
-    AB.turningPts(mol1_V,mol1['re'], v= data['vi']) # Assign attributies evals, rm, rp
-        
+    AB.turningPts(mol1_V,mol1['re'], v= data['vi']) # Assign attributies evals, rm, rp    
     if potential_BC in vList:
         mol2 = data['potential_params']["BC"][f"{potential_BC}"]
         if potential_BC == 'morse':
@@ -824,8 +811,14 @@ def start(input_file):
             mol2_V, mol2_dV, _ = vF.buckingham(**mol2)
     else:
         mol2 = {}
-        _, mol2_V, mol2_dV, mol2['re'] = util.numToV(f'{potential_BC}')
-
+        r_bc, mol2_V, mol2_dV, mol2['re'] = util.numToV(f'{potential_BC}')
+        # Ensure calculation is within bounds of potential data 
+        if data['r0'] < min(r_bc):
+            print(f'Initial distance must be greater than minimum r value provided ({min(r_bc)}).')
+            quit()
+        if data['int_params']['r_stop'] > max(r_bc):
+            print(f'Stop condition too large! Ensure "r_stop" <= maximum r value of potential ({max(r_bc)}).')
+            quit()
     if potential_CA in vList:
         mol3 = data['potential_params']["CA"][f"{potential_CA}"]
         if potential_CA == 'morse':
@@ -836,7 +829,13 @@ def start(input_file):
             mol3_V, mol3_dV, _ = vF.buckingham(**mol3)
     else:
         mol3 = {}
-        _, mol3_V, mol3_dV, mol3['re'] = util.numToV(f'{potential_CA}')
+        r_ca, mol3_V, mol3_dV, mol3['re'] = util.numToV(f'{potential_CA}')
+        # Ensure calculation is within bounds of potential data 
+        if data['r0'] < min(r_ca):
+            print(f'Initial distance must be greater than minimum r value provided ({min(r_bc)}).')
+            quit()
+        if data['int_params']['r_stop'] > max(r_ca):
+            print(f'Stop condition too large! Ensure "r_stop" < maximum r value of potential ({max(r_ca)}).')
 
     # Calculate relevant attributes
     inputs = {'m1' : m1, 'm2': m2, 'm3': m3, 
@@ -854,7 +853,3 @@ def main(plot = False,**kwargs):
     # result = {'d_e': a.delta_e}
     # return result
     return util.get_results(a)
-
-if __name__ == '__main__':
-    calc = start('example/h2_ca/inputs.json')
-    print(main(plot = True, **calc))
