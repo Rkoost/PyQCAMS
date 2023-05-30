@@ -1,7 +1,6 @@
-ipython
-jupyter
-matplotlib
-numpy
-pandas
-scipy
-multiprocess
+ipython >= 7.30
+matplotlib >= 3.7.1
+numpy >= 1.23.5
+pandas >= 1.2.4
+scipy >= 1.10.0
+multiprocess >= 0.70.14
