@@ -10,6 +10,9 @@ pip install PyQCAMS
 <p>The `example` folder contains a full example for simulating the reaction H<sub>2</sub> + Ca. </p> 
 
 
+## Data
+A sample dataset to reproduce the figures in the example notebook can be found at https://figshare.com/s/8b923dab304005ae7a5c.  
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first
