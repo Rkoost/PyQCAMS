@@ -101,28 +101,15 @@ def numToV(file):
     num_re, float
         equilibrium point (min of potential)
     '''
-    types = ['.csv','.txt','.dat']
-    split = os.path.splitext(f'{file}')
-    filetype = split[1]
-    if filetype in types:
-        try:
-            # comma separated
-            df = pd.read_csv(f'{file}',header = None)
-            num_x = np.array([float(i) for i in df[0][:].values.tolist()])
-            num_y = np.array([float(i) for i in df[1][:].values.tolist()])
-        except:
-            try:
-                # tab separated
-                df = pd.read_csv(f'{file}',header = None, sep = '\s+')
-                num_x = np.array([float(i) for i in df[0][:].values.tolist()])
-                num_y = np.array([float(i) for i in df[1][:].values.tolist()])
-            except:
-                print('Please use either comma or tab separated data.')
-                quit()
-    else: 
-        print('Please specify filetype. Choose from "csv", "dat", or "txt".')
+    try:
+        df = pd.read_csv(f'{file}',header = None, sep = None, engine='python')
+        num_x = np.array([float(i) for i in df[0][:].values.tolist()])
+        num_y = np.array([float(i) for i in df[1][:].values.tolist()])
+    except Exception as e:
+            print(e)
+            quit()
     num_y -= num_y[-1] # Shift values to make curve approach 0 by setting final point to 0
-    num_V = InterpolatedUnivariateSpline(num_x,num_y, k = 4, ext = 'raise') # Use k = 4 to find roots of derivative
+    num_V = InterpolatedUnivariateSpline(num_x,num_y, k = 4) # Use k = 4 to find roots of derivative
     num_dV = num_V.derivative()
     cr_pts = num_dV.roots()
     cr_pts = np.append(cr_pts, (num_x[0], num_x[-1]))  # also check the endpoints of the interval
