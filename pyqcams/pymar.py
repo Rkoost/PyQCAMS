@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp, quad
 from scipy.optimize import root_scalar, fsolve
+import sys
 import warnings
 from pyqcams import util, constants
 import json
@@ -96,9 +97,9 @@ class Energy(object):
                 plt.plot(x,V(x))
                 plt.plot(re,V(re), marker = 'o')
                 plt.hlines(self.evj[self.v], 0, 5)
-                plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
+                # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
                 plt.show()
-            quit()
+            sys.exit()
         # Integrate to solve for tau, n_vib
         tau = quad(lambda x: 1/np.sqrt(vbrot(x)),rm,rp)[0]
         vib = quad(lambda x: np.sqrt(vbrot(x)),rm,rp)[0]
@@ -815,10 +816,10 @@ def start(input_file):
         # Ensure calculation is within bounds of potential data 
         if data['r0'] < min(r_bc):
             print(f'Initial distance must be greater than minimum r value provided ({min(r_bc)}).')
-            quit()
+            sys.exit()
         if data['int_params']['r_stop'] > max(r_bc):
             print(f'Stop condition too large! Ensure "r_stop" <= maximum r value of potential ({max(r_bc)}).')
-            quit()
+            sys.exit()
     if potential_CA in vList:
         mol3 = data['potential_params']["CA"][f"{potential_CA}"]
         if potential_CA == 'morse':
@@ -833,7 +834,7 @@ def start(input_file):
         # Ensure calculation is within bounds of potential data 
         if data['r0'] < min(r_ca):
             print(f'Initial distance must be greater than minimum r value provided ({min(r_bc)}).')
-            quit()
+            sys.exit()
         if data['int_params']['r_stop'] > max(r_ca):
             print(f'Stop condition too large! Ensure "r_stop" < maximum r value of potential ({max(r_ca)}).')
 
