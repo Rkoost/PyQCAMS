@@ -6,7 +6,7 @@ long_description = (this_directory/"README.md").read_text()
 
 setup(
     name = 'PyQCAMS',
-    version = '1.0.2',
+    version = '1.0.3',
     description = 'Python Quasi Classical Atom Molecule Scattering',
     long_description=long_description,
     long_description_content_type='text/markdown',
