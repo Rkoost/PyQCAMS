@@ -719,7 +719,7 @@ class Potential(object):
         cm, float
             short-range parameter
         '''
-        V = lambda r: cm/r**(m)-n/r**(n)
+        V = lambda r: cm/r**(m)-cn/r**(n)
         dV = lambda r: -m*cm/r**(m+1)+n*cn/r**(n+1)
         return V, dV
 
@@ -784,11 +784,13 @@ def start(input_file):
     if potential_AB in vList:
         mol1 = data['potential_params']["AB"][f"{potential_AB}"]  # potential parameters
         if potential_AB == 'morse':
-                mol1_V, mol1_dV = vF.morse(**mol1)
+            mol1_V, mol1_dV = vF.morse(**mol1)
         elif potential_AB == 'lj':
             mol1_V, mol1_dV = vF.lj(**mol1)
+            mol1['re'] = fsolve(mol1_dV,mol1['re'])
         elif potential_AB == 'buck':
             mol1_V, mol1_dV, xmin= vF.buckingham(**mol1)
+            mol1['re'] = fsolve(mol1_dV,mol1['re'])
         if xmin == None:
             xmin = data['potential_params']["AB"]['xmin'] 
         xmax = data['potential_params']["AB"]['xmax']
@@ -808,8 +810,10 @@ def start(input_file):
             mol2_V, mol2_dV = vF.morse(**mol2)
         elif potential_BC == 'lj':
             mol2_V, mol2_dV = vF.lj(**mol2)
+            mol2['re'] = fsolve(mol2_dV,mol2['re'])
         elif potential_BC == 'buck':
             mol2_V, mol2_dV, _ = vF.buckingham(**mol2)
+            mol2['re'] = fsolve(mol2_dV,mol2['re'])
     else:
         mol2 = {}
         r_bc, mol2_V, mol2_dV, mol2['re'] = util.numToV(f'{potential_BC}')
@@ -826,8 +830,10 @@ def start(input_file):
             mol3_V, mol3_dV = vF.morse(**mol3)
         elif potential_CA == 'lj':
             mol3_V, mol3_dV = vF.lj(**mol3)
+            mol3['re'] = fsolve(mol3_dV,mol3['re'])
         elif potential_CA == 'buck':
             mol3_V, mol3_dV, _ = vF.buckingham(**mol3)
+            mol3['re'] = fsolve(mol3_dV,mol3['re'])
     else:
         mol3 = {}
         r_ca, mol3_V, mol3_dV, mol3['re'] = util.numToV(f'{potential_CA}')
@@ -854,3 +860,6 @@ def main(plot = False,**kwargs):
     # result = {'d_e': a.delta_e}
     # return result
     return util.get_results(a)
+
+if __name__ == '__main__':
+    calc = start('cah_in.json')
