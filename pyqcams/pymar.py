@@ -334,12 +334,12 @@ class QCT(object):
 
         # Internuclear distances 
         r12 = np.sqrt(rho1x**2+rho1y**2+rho1z**2)
-        r32 = np.sqrt((rho2x + m2*rho1x/(m1+m2))**2
+        r32 = np.sqrt((rho2x - m1*rho1x/(m1+m2))**2
+                    + (rho2y - m1*rho1y/(m1+m2))**2 
+                    + (rho2z - m1*rho1z/(m1+m2))**2)
+        r31 = np.sqrt((rho2x + m2*rho1x/(m1+m2))**2
                     + (rho2y + m2*rho1y/(m1+m2))**2 
                     + (rho2z + m2*rho1z/(m1+m2))**2)
-        r31 = np.sqrt((-rho2x + m1*rho1x/(m1+m2))**2
-                    + (-rho2y + m1*rho1y/(m1+m2))**2 
-                    + (-rho2z + m1*rho1z/(m1+m2))**2)
         
         # Kinetic energy
         ekin = 0.5*(p1x**2+p1y**2+p1z**2)/mu12 \
@@ -863,3 +863,6 @@ def main(plot = False,**kwargs):
 
 if __name__ == '__main__':
     calc = start('cah_in.json')
+    traj = QCT(**calc)
+    traj.runT()
+    print(traj.delta_e)
