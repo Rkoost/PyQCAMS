@@ -88,10 +88,8 @@ class Energy(object):
             rm = root_scalar(vbrot,bracket = [self.xmin,re]).root
             rp = root_scalar(vbrot,bracket = [re,self.xmax]).root
         except:
-            print('Root solver failed. Try adjusting your guess equilibrium point.\n'
-                  'It should fall between the classical turning points.')
-            fig = input('Would you like to see a plot of your potential? '
-                        'Type "y" for yes, or "n" for no: \n')
+            print('Turning points could not be found. Try adjusting your guess for "re."')
+            fig = input('Would you like to see a plot of your potential (y/n)?\n')
             if fig == 'y':
                 # Show re guess compared with elev
                 plt.plot(x,V(x))
@@ -231,6 +229,7 @@ class QCT(object):
                             vib = None
                             print(f'Turning point calculation failed. Initial conditions: \n \
                                 d:{self.d};angles:{self.ang};n:{self.n_vib};j:{self.j}')
+                            sys.exit()
             # Multiply constants
             if vib != None:
                 n_vib = -0.5 + vib*np.sqrt(2*mu)/np.pi
@@ -240,6 +239,15 @@ class QCT(object):
         # If rotational barrier is too high, the molecule dissociates
         else:
             vib = -1 
+            fig = input('Would you like to see a plot of the potential (y/n)? \n')
+            if fig == 'y':
+                x = np.linspace(.1,self.far,1000)
+                # Show re guess compared with elev
+                plt.plot(x,V(x))
+                plt.plot(re,V(re), marker = 'o')
+                plt.hlines(E, 0, self.far)
+                # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
+                plt.show()
             return vib
         # vP = quad(vbrot, rm, rp)[0]
         # vP *= np.sqrt(2*mu)/np.pi
@@ -351,7 +359,6 @@ class QCT(object):
         # epot = 0
         
         etot = ekin + epot
-        # Include rotational energy?
 
         # Radial angular momenta
         # Lx = Lx1 + Lx2
@@ -623,8 +630,8 @@ class QCT(object):
                 if vp == None:
                     trash += 1
                 elif vp == -1:
-                    print(f'(12) New turning points could not be found. Check if Veff - E < 0 everywhere. Check that your \
-                            "re" guess is less than the minimum of your potential. ')
+                    print(f'(12) New turning points could not be found. Check that your \
+                            "re" guess is left of the minimum of your potential.')
                     nd += 1
                 else:
                     vt = np.round(vp)
@@ -642,7 +649,7 @@ class QCT(object):
                     trash += 1
                 elif vp == -1:
                     print(f'(32) New turning points could not be found. Check if Veff - E < 0 everywhere. Check that your \
-                            "re" guess is less than the minimum of your potential. ')
+                            "re" guess is left of the minimum of your potential. ')
                     nd += 1
                 else:                
                     vt = np.round(vp)
@@ -660,7 +667,7 @@ class QCT(object):
                     trash += 1
                 elif vp == -1:
                     print(f'(31) New turning points could not be found. Check if Veff - E < 0 everywhere. Check that your \
-                            "re" guess is less than the minimum of your potential. ')
+                            "re" guess is left of the minimum of your potential. ')
                     nd += 1
                 else:                
                     vt = np.round(vp)
@@ -681,6 +688,7 @@ class QCT(object):
                     p2x[-1], p2y[-1], p2z[-1]]
         self.delta_e = En[-1]-En[0]
         self.delta_p = Ln[-1] - Ln[0]
+        self.E12, self.E32, self.E31 = E12, E32, E31
         return
 
 class Potential(object):
@@ -761,6 +769,17 @@ class Potential(object):
         xi = fsolve(dBuck,max)
         
         return Buck, dBuck, xi
+    
+    def vtrip(C):
+        V = lambda r12,r23,r31: C*(1/(r12*r23*r31)**3 - 3*((r12**2-r23**2-r31**2)*
+                                                            (r23**2-r31**2-r12**2)*
+                                                            (r31**2-r12**2-r23**2))/
+                                                        8/(r12*r23*r31)**5)
+        dV = lambda x,y,z: -C*(-(3*(x**6 + x**4*(y**2 + z**2) - 
+                                            5*(y**2 - z**2)**2*(y**2 + z**2) + 
+                                            x**2*(3*y**4 + 2*y**2*z**2 + 3*z**4)))/
+                                        (8*x**6*y**5*z**5))
+        return V, dV
     
     
 
@@ -862,7 +881,11 @@ def main(plot = False,**kwargs):
     return util.get_results(a)
 
 if __name__ == '__main__':
+    from pyqcams import plotters
     calc = start('cah_in.json')
     traj = QCT(**calc)
-    traj.runT()
-    print(traj.delta_e)
+    traj.runT(doplot = True)
+    fig, ax = plt.subplots()
+    plotters.plot_e(traj, ax)
+    plt.show()
+    print(util.get_results(traj))
