@@ -89,14 +89,12 @@ class Energy(object):
             rp = root_scalar(vbrot,bracket = [re,self.xmax]).root
         except:
             print('Turning points could not be found. Try adjusting your guess for "re."')
-            fig = input('Would you like to see a plot of your potential (y/n)?\n')
-            if fig == 'y':
-                # Show re guess compared with elev
-                plt.plot(x,V(x))
-                plt.plot(re,V(re), marker = 'o')
-                plt.hlines(self.evj[self.v], 0, 5)
-                # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
-                plt.show()
+            # Show re guess compared with elev
+            plt.plot(x,V(x))
+            plt.plot(re,V(re), marker = 'o')
+            plt.hlines(self.evj[self.v], 0, 5)
+            # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
+            plt.show()
             sys.exit()
         # Integrate to solve for tau, n_vib
         tau = quad(lambda x: 1/np.sqrt(vbrot(x)),rm,rp)[0]
@@ -239,15 +237,15 @@ class QCT(object):
         # If rotational barrier is too high, the molecule dissociates
         else:
             vib = -1 
-            fig = input('Would you like to see a plot of the potential (y/n)? \n')
-            if fig == 'y':
-                x = np.linspace(.1,self.far,1000)
-                # Show re guess compared with elev
-                plt.plot(x,V(x))
-                plt.plot(re,V(re), marker = 'o')
-                plt.hlines(E, 0, self.far)
-                # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
-                plt.show()
+            print(f'New turning points could not be found. Check that your \
+            "re" guess is left of the minimum of your potential.')
+            x = np.linspace(.1,self.far,1000)
+            # Show re guess compared with elev
+            plt.plot(x,V(x))
+            plt.plot(re,V(re), marker = 'o')
+            plt.hlines(E, 0, self.far)
+            # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
+            plt.show()
             return vib
         # vP = quad(vbrot, rm, rp)[0]
         # vP *= np.sqrt(2*mu)/np.pi
