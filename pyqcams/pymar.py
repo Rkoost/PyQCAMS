@@ -88,7 +88,7 @@ class Energy(object):
             rm = root_scalar(vbrot,bracket = [self.xmin,re]).root
             rp = root_scalar(vbrot,bracket = [re,self.xmax]).root
         except:
-            print('Turning points could not be found. Try adjusting your guess for "re."')
+            print('Initial turning points could not be found. Try adjusting your guess for "re."')
             # Show re guess compared with elev
             plt.plot(x,V(x))
             plt.plot(re,V(re), marker = 'o')
@@ -234,18 +234,17 @@ class QCT(object):
                 return n_vib
             else:
                 return vib
-        # If rotational barrier is too high, the molecule dissociates
+        # If rotational barrier is too high, the molecule dissociates (No bound states)
         else:
             vib = -1 
-            print(f'New turning points could not be found. Check that your \
-            "re" guess is left of the minimum of your potential.')
-            x = np.linspace(.1,self.far,1000)
+            print(f'New re: {re}, new j: {jeff}')
+            # x = np.linspace(.1,self.far,1000)
             # Show re guess compared with elev
-            plt.plot(x,V(x))
-            plt.plot(re,V(re), marker = 'o')
-            plt.hlines(E, 0, self.far)
-            # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
-            plt.show()
+            # plt.plot(x,V(x))
+            # plt.plot(re,V(re), marker = 'o')
+            # plt.hlines(E, 0, self.far)
+            # # plt.ylim(self.evj[self.v]*3, V(re)*3) # zoom in
+            # plt.show()
             return vib
         # vP = quad(vbrot, rm, rp)[0]
         # vP *= np.sqrt(2*mu)/np.pi
@@ -289,6 +288,7 @@ class QCT(object):
         theta = np.arccos(1-2*rng.random())
         phi = 2*np.pi*rng.random()
         eta = 2*np.pi*rng.random()
+
         self.ang = [theta,phi,eta] # Store as input data
 
         # Molecule (internal coordinate)
@@ -565,13 +565,12 @@ class QCT(object):
         K32 = p32**2/2/self.mu32
         K31 = p31**2/2/self.mu31
 
-    
-        bd12 = util.bound(self.v1,self.dv1,j12_eff[-1],self.mu12, self.re1)
-        bd32 = util.bound(self.v2,self.dv2,j32_eff[-1],self.mu32, self.re2)
-        bd31 = util.bound(self.v3,self.dv3,j31_eff[-1],self.mu31, self.re3)
+        bd12 = util.bound(self.v1,j12_eff[-1],self.mu12, self.re1)
+        bd32 = util.bound(self.v2,j32_eff[-1],self.mu32, self.re2)
+        bd31 = util.bound(self.v3,j31_eff[-1],self.mu31, self.re3)
 
         if doplot == True:
-            plt.figure()
+            plt.figure(1)
             plt.plot(self.t, r12, label = 'r12')
             plt.plot(self.t, r32, label = 'r32')
             plt.plot(self.t, r31, label = 'r31')
@@ -580,7 +579,7 @@ class QCT(object):
             plt.ylabel('$r_(a_0)$')
             plt.legend()
 
-            # plt.figure()
+            # plt.figure(2)
             # plt.plot(self.t,E12,label = 'E12')
             # plt.hlines(bd12,self.t[0],self.t[-1], linestyle = 'dashed',label = 'bd12')
             # plt.plot(self.t,E32,label = 'E32')
@@ -604,28 +603,22 @@ class QCT(object):
         
         # Keep track of coordinates
         self.r = (rho1x,rho1y,rho1z,rho2x,rho2y,rho2z)
-        # print(j31_eff)
-        # x = np.linspace(.1,13,1000)
-        # for i in range(10):
-        #     plt.hlines(E31[-i],0,10, label = f'e31_{i}')
-        # plt.plot(x,self.v3(x) + j31_eff[-1]*(j31_eff[-1]+1)/2/self.mu31/x**2)
-        # plt.hlines(bd31, 0, 10, color = 'g')
-        # plt.legend()
-        # plt.show()
-        # scrap if calculation ends before intermediate complex breaks apart
+
+        # comp if calculation ends before intermediate complex breaks apart
         n12,n32,n31,nd, comp = 0, 0, 0, 0, 0
         trash = 0
         vt = 0
         w = 0
         j_eff = 0
         # AB + C -> AB + C
+
         # Boundary is raised by centrifugal term 
-        if E12[-1] < bd12:
+        if bd12 != None and E12[-1] < bd12:
             if E32[-1] > 0 and E31[-1] > 0: # Ensure an intermediate complex isn't formed
                 # Find final (v, j)
                 # Calculate the turning points of the new energy
                 vp = self.vPrime(jeff = j12_eff[-1], mu = self.mu12, V = self.v1, dV = self.dv1, E = E12[-1], re = self.re1)
-                if vp == None:
+                if vp == None: # vPrime fails to find turning pts
                     trash += 1
                 elif vp == -1:
                     print(f'(12) New turning points could not be found. Check that your \
@@ -640,13 +633,13 @@ class QCT(object):
             else:
                 comp += 1
         # AB + C -> BC + A
-        elif E32[-1]  < bd32:
+        elif bd32 != None and E32[-1]  < bd32:
             if E12[-1] > 0 and E31[-1] > 0:
                 vp = self.vPrime(jeff = j32_eff[-1], mu = self.mu32, V = self.v2, dV = self.dv2, E = E32[-1], re = self.re2)
                 if vp == None:
                     trash += 1
                 elif vp == -1:
-                    print(f'(32) New turning points could not be found. Check if Veff - E < 0 everywhere. Check that your \
+                    print(f'(32) New turning points could not be found. Check that your \
                             "re" guess is left of the minimum of your potential. ')
                     nd += 1
                 else:                
@@ -658,13 +651,13 @@ class QCT(object):
             else:
                 comp += 1
         # AB + C -> AC + B
-        elif E31[-1]  < bd31:
+        elif bd31 != None and E31[-1]  < bd31:
             if E32[-1] > 0 and E12[-1] > 0:
                 vp = self.vPrime(jeff = j31_eff[-1], mu = self.mu31, V = self.v3, dV = self.dv3, E = E31[-1], re = self.re3)
                 if vp == None:
                     trash += 1
                 elif vp == -1:
-                    print(f'(31) New turning points could not be found. Check if Veff - E < 0 everywhere. Check that your \
+                    print(f'(31) New turning points could not be found. Check that your \
                             "re" guess is left of the minimum of your potential. ')
                     nd += 1
                 else:                
@@ -880,10 +873,10 @@ def main(plot = False,**kwargs):
 
 if __name__ == '__main__':
     from pyqcams import plotters
-    calc = start('cah_in.json')
+    calc = start('example/h2_ca/inputs.json')
     traj = QCT(**calc)
     traj.runT(doplot = True)
-    fig, ax = plt.subplots()
-    plotters.plot_e(traj, ax)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plotters.plot_e(traj, ax)
+    # plt.show()
     print(util.get_results(traj))
