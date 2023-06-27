@@ -88,7 +88,7 @@ class Energy(object):
             rm = root_scalar(vbrot,bracket = [self.xmin,re]).root
             rp = root_scalar(vbrot,bracket = [re,self.xmax]).root
         except:
-            print('Initial turning points could not be found. Try adjusting your guess for "re."')
+            print('Initial turning points could not be found. Try adjusting your range or guess for "re."')
             # Show re guess compared with elev
             plt.plot(x,V(x))
             plt.plot(re,V(re), marker = 'o')
@@ -227,7 +227,6 @@ class QCT(object):
                             vib = None
                             print(f'Turning point calculation failed. Initial conditions: \n \
                                 d:{self.d};angles:{self.ang};n:{self.n_vib};j:{self.j}')
-                            sys.exit()
             # Multiply constants
             if vib != None:
                 n_vib = -0.5 + vib*np.sqrt(2*mu)/np.pi
