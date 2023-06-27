@@ -1,7 +1,7 @@
 import os
 import warnings
 import numpy as np
-from scipy.optimize import fsolve
+from scipy.signal import find_peaks
 from scipy.interpolate import InterpolatedUnivariateSpline
 import pandas as pd
 from pyqcams import constants
@@ -25,7 +25,7 @@ def gaus(vp , vt, s=0.1):
             return w
             
 
-def bound(v,dv, j, mu, re):
+def bound(v, j, mu, re):
     ''' Finds the new boundary for higher j values
     Purpose:
         For higher j values, the "bound" condition changes
@@ -37,10 +37,13 @@ def bound(v,dv, j, mu, re):
     else:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")    
-            vp_eff = lambda r: dv(r) - j*(j+1)/mu/r**3
             v_eff = lambda r: v(r) + j*(j+1)/2/mu/r**2
-            ro = fsolve(vp_eff, re+3)  # 3 a_0 away from the equlibrium seems to work (for Morse)
-            bdry = v_eff(ro)
+            vx = np.linspace(re, re+20, 1000).flatten()
+            ro, _ = find_peaks(v_eff(vx))
+            bdry = v_eff(vx[ro])
+            if bdry.size == 0:
+                 # No bound states exist, set bound to -1
+                 bdry = None
     return bdry
 
 
@@ -118,3 +121,18 @@ def numToV(file):
     num_re = cr_pts[min_index] # Equilibrium distance
     return num_x, num_V, num_dV, num_re
 
+if __name__ == '__main__':
+    from pyqcams import pymar
+    import matplotlib.pyplot as plt
+    calc = pymar.start('example/h2_ca/inputs.json')
+    traj = pymar.QCT(**calc)
+    bd = bound(traj.v1, 50,traj.mu12, traj.re1)
+    print(bd)
+    x = np.linspace(1,10,500)
+    jlist = np.linspace(0,50,5)
+    for j in jlist:
+        bd = bound(traj.v1,j,traj.mu12,traj.re1)
+        plt.plot(x, traj.v1(x) + j*(j+1)/2/traj.mu12/x**2, label = f'j = {j}, bd = {bd}')
+        plt.plot(np.full_like(x,bd))
+    plt.legend()
+    plt.show()
