@@ -8,6 +8,7 @@
     "potential_AB": "lj",
     "potential_BC": "lj",
     "potential_CA": "lj",
+    "potential_ABC": 0,
     "masses":{
         "ma": 1837.47165336,
         "mb": 1837.47165336,
@@ -15,14 +16,14 @@
     },
     "int_params":{
         "t_stop": 15,
-        "r_stop": 45,
+        "r_stop": 30,
         "a_tol": 1E-8,
         "r_tol": 1E-9
     },
     "potential_params":{
         "AB":{
             "npts": 1000,
-            "xmin": 0.8,
+            "xmin": 0.6,
             "xmax": 20,
             "morse":{
                 "re" : 1.40104284795, 
