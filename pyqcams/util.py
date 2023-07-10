@@ -38,11 +38,11 @@ def bound(v, j, mu, re):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")    
             v_eff = lambda r: v(r) + j*(j+1)/2/mu/r**2
-            vx = np.linspace(re, re+20, 1000).flatten()
+            vx = np.linspace(re, re+10, 1000).flatten()
             ro, _ = find_peaks(v_eff(vx))
             bdry = v_eff(vx[ro])
             if bdry.size == 0:
-                 # No bound states exist, set bound to -1
+                 # No bound states exist, set bound to None
                  bdry = None
     return bdry
 
@@ -113,6 +113,8 @@ def numToV(file):
             quit()
     num_y -= num_y[-1] # Shift values to make curve approach 0 by setting final point to 0
     num_V = InterpolatedUnivariateSpline(num_x,num_y, k = 4) # Use k = 4 to find roots of derivative
+    # Fit a c6/r^6 to the last 5 points
+    
     num_dV = num_V.derivative()
     cr_pts = num_dV.roots()
     cr_pts = np.append(cr_pts, (num_x[0], num_x[-1]))  # also check the endpoints of the interval
@@ -126,10 +128,11 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     calc = pymar.start('example/h2_ca/inputs.json')
     traj = pymar.QCT(**calc)
-    bd = bound(traj.v1, 50,traj.mu12, traj.re1)
+    bd = bound(traj.v2, 1,traj.mu12, traj.re1)
     print(bd)
-    x = np.linspace(1,10,500)
-    jlist = np.linspace(0,50,5)
+    x = np.linspace(1,13,500)
+    # jlist = np.linspace(0,50,5)
+    jlist = [2]
     for j in jlist:
         bd = bound(traj.v1,j,traj.mu12,traj.re1)
         plt.plot(x, traj.v1(x) + j*(j+1)/2/traj.mu12/x**2, label = f'j = {j}, bd = {bd}')
