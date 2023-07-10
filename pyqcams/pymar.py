@@ -171,9 +171,11 @@ class QCT(object):
         self.v1 = kwargs.get('v1')
         self.v2 = kwargs.get('v2')
         self.v3 = kwargs.get('v3')
+        self.vtrip = kwargs.get('vtrip')
         self.dv1 = kwargs.get('dv1') 
         self.dv2 = kwargs.get('dv2')
         self.dv3 = kwargs.get('dv3')
+        self.dvtrip = kwargs.get('dvtrip')
         self.rpi = kwargs.get('mol').get_rp()
         self.re1 = kwargs.get('re1')
         self.re2 = kwargs.get('re2')
@@ -351,7 +353,7 @@ class QCT(object):
                 + 0.5*(p2x**2+p2y**2+p2z**2)/mu123
 
         #Potential energy
-        epot = self.v1(r12)+self.v2(r32)+self.v3(r31)
+        epot = self.v1(r12)+self.v2(r32)+self.v3(r31) + self.vtrip(r12,r32,r31)
         # epot = H2_V(r12)
         # epot = 0
         
@@ -425,13 +427,18 @@ class QCT(object):
 
         # Create f = (rho1x', rho1y', rho1z', rho2x', rho2y', rho2z', p1x', p1y', p1z', p2x', p2y', p2z')
         f = [p1x/mu12, p1y/mu12, p1z/mu12, p2x/mu123, p2y/mu123, p2z/mu123,
-            -self.dv1(r12)*r12drho1x-self.dv2(r32)*r32drho1x-self.dv3(r31)*r31drho1x,
-            -self.dv1(r12)*r12drho1y-self.dv2(r32)*r32drho1y-self.dv3(r31)*r31drho1y,
-            -self.dv1(r12)*r12drho1z-self.dv2(r32)*r32drho1z-self.dv3(r31)*r31drho1z,
-            -self.dv2(r32)*r32drho2x-self.dv3(r31)*r31drho2x,
-            -self.dv2(r32)*r32drho2y-self.dv3(r31)*r31drho2y,
-            -self.dv2(r32)*r32drho2z-self.dv3(r31)*r31drho2z]
-
+            -self.dv1(r12)*r12drho1x-self.dv2(r32)*r32drho1x-self.dv3(r31)*r31drho1x
+            -self.dvtrip(r12,r32,r31)*r12drho1x-self.dvtrip(r32,r31,r12)*r32drho1x-self.dvtrip(r31,r12,r32)*r31drho1x,
+            -self.dv1(r12)*r12drho1y-self.dv2(r32)*r32drho1y-self.dv3(r31)*r31drho1y
+            -self.dvtrip(r12,r32,r31)*r12drho1y-self.dvtrip(r32,r31,r12)*r32drho1y-self.dvtrip(r31,r12,r32)*r31drho1y,
+            -self.dv1(r12)*r12drho1z-self.dv2(r32)*r32drho1z-self.dv3(r31)*r31drho1z
+            -self.dvtrip(r12,r32,r31)*r12drho1z-self.dvtrip(r32,r31,r12)*r32drho1z-self.dvtrip(r31,r12,r32)*r31drho1z,
+            -self.dv2(r32)*r32drho2x-self.dv3(r31)*r31drho2x
+            -self.dvtrip(r32,r31,r12)*r32drho2x-self.dvtrip(r31,r12,r32)*r31drho2x,
+            -self.dv2(r32)*r32drho2y-self.dv3(r31)*r31drho2y
+            -self.dvtrip(r32,r31,r12)*r32drho2y-self.dvtrip(r31,r12,r32)*r31drho2y,
+            -self.dv2(r32)*r32drho2z-self.dv3(r31)*r31drho2z
+            -self.dvtrip(r32,r31,r12)*r32drho2z-self.dvtrip(r31,r12,r32)*r31drho2z]
         return f 
 
     
@@ -568,6 +575,7 @@ class QCT(object):
         bd32 = util.bound(self.v2,j32_eff[-1],self.mu32, self.re2)
         bd31 = util.bound(self.v3,j31_eff[-1],self.mu31, self.re3)
 
+
         if doplot == True:
             plt.figure(1)
             plt.plot(self.t, r12, label = 'r12')
@@ -578,23 +586,24 @@ class QCT(object):
             plt.ylabel('$r_(a_0)$')
             plt.legend()
 
-            # plt.figure(2)
-            # plt.plot(self.t,E12,label = 'E12')
-            # plt.hlines(bd12,self.t[0],self.t[-1], linestyle = 'dashed',label = 'bd12')
-            # plt.plot(self.t,E32,label = 'E32')
-            # plt.hlines(bd32,self.t[0],self.t[-1], color = 'orange',linestyle = 'dashed', label = 'bd32')
-            # plt.plot(self.t,E31,label = 'E31')
-            # plt.hlines(bd31,self.t[0],self.t[-1], color = 'g',linestyle = 'dashed', label = 'bd31')
-            # plt.hlines(0,self.t[0],self.t[-1])
-            # # plt.plot(self.t, self.v1(r12), label = 'v12') # potential energy 
-            # # plt.plot(self.t, self.v2(r32), label = 'v32')
-            # # plt.plot(self.t, self.v3(r31), label = 'v31')
+            plt.figure(2)
+            plt.plot(self.t,E12,label = 'E12')
+            plt.hlines(bd12,self.t[0],self.t[-1], linestyle = 'dashed',label = 'bd12')
+            plt.plot(self.t,E32,label = 'E32')
+            plt.hlines(bd32,self.t[0],self.t[-1], color = 'orange',linestyle = 'dashed', label = 'bd32')
+            plt.plot(self.t,E31,label = 'E31')
+            plt.hlines(bd31,self.t[0],self.t[-1], color = 'g',linestyle = 'dashed', label = 'bd31')
+            plt.hlines(0,self.t[0],self.t[-1])
+            # plt.plot(self.t, self.v1(r12), label = 'v12') # potential energy 
+            # plt.plot(self.t, self.v2(r32), label = 'v32')
+            # plt.plot(self.t, self.v3(r31), label = 'v31')
+            # plt.plot(self.t, self.vtrip(r12,r32,r31), label = 'vthree')
             # # plt.plot(self.t, K12, label = 'K12') # kinetic energy
             # # plt.plot(self.t, K32, label = 'K32')
             # # plt.plot(self.t, K31, label = 'K31')
-            # plt.xlabel('time (a.u)')
-            # plt.ylabel('$E_(E_H)$')
-            # plt.legend()
+            plt.xlabel('time (a.u)')
+            plt.ylabel('$E_(E_H)$')
+            plt.legend()
 
             # plt.figure(3)
             # plt.plot(self.t, En) # Total energy
@@ -612,7 +621,7 @@ class QCT(object):
         # AB + C -> AB + C
 
         # Boundary is raised by centrifugal term 
-        if bd12 != None and E12[-1] < bd12:
+        if bd12 != None and E12[-1] < bd12.any():
             if E32[-1] > 0 and E31[-1] > 0: # Ensure an intermediate complex isn't formed
                 # Find final (v, j)
                 # Calculate the turning points of the new energy
@@ -632,7 +641,7 @@ class QCT(object):
             else:
                 comp += 1
         # AB + C -> BC + A
-        elif bd32 != None and E32[-1]  < bd32:
+        elif bd32 != None and E32[-1]  < bd32.any():
             if E12[-1] > 0 and E31[-1] > 0:
                 vp = self.vPrime(jeff = j32_eff[-1], mu = self.mu32, V = self.v2, dV = self.dv2, E = E32[-1], re = self.re2)
                 if vp == None:
@@ -650,7 +659,7 @@ class QCT(object):
             else:
                 comp += 1
         # AB + C -> AC + B
-        elif bd31 != None and E31[-1]  < bd31:
+        elif bd31 != None and E31[-1]  < bd31.any():
             if E32[-1] > 0 and E12[-1] > 0:
                 vp = self.vPrime(jeff = j31_eff[-1], mu = self.mu31, V = self.v3, dV = self.dv3, E = E31[-1], re = self.re3)
                 if vp == None:
@@ -760,15 +769,31 @@ class Potential(object):
         
         return Buck, dBuck, xi
     
-    def vtrip(C):
+    def axilrod(self,C = 0):
+        '''
+        Return Axilrod-Teller potential
+        
+        C = V*alpha1*alpha2*alpha3
+
+        V - Ionization energy 
+        alpha - atomic polarizability
+
+
+        '''
         V = lambda r12,r23,r31: C*(1/(r12*r23*r31)**3 - 3*((r12**2-r23**2-r31**2)*
                                                             (r23**2-r31**2-r12**2)*
                                                             (r31**2-r12**2-r23**2))/
                                                         8/(r12*r23*r31)**5)
-        dV = lambda x,y,z: -C*(-(3*(x**6 + x**4*(y**2 + z**2) - 
-                                            5*(y**2 - z**2)**2*(y**2 + z**2) + 
-                                            x**2*(3*y**4 + 2*y**2*z**2 + 3*z**4)))/
-                                        (8*x**6*y**5*z**5))
+        
+        # Partial derivative w.r.t. x (symmetry between r12, r23, r31)
+        # dV = lambda x,y,z: -C*(3*((x**6 + x**4*(y**2 + z**2) - 
+        #                                     5*(y**2 - z**2)**2*(y**2 + z**2) + 
+        #                                     x**2*(3*y**4 + 2*y**2*z**2 + 3*z**4)))/
+        #                                 (8*x**6*y**5*z**5))
+        
+        dV = lambda x,y,z: -3*C*(x**6 + x**4*(y**2 + z**2) - 
+                            5*(y**2 - z**2)**2*(y**2 + z**2) + 
+                            x**2*(3*y**4 + 2*y**2*z**2 + 3*z**4))/(8*x**6*y**5*z**5)
         return V, dV
     
     
@@ -789,6 +814,8 @@ def start(input_file):
     m1,m2,m3 = data['masses'].values() # masses
     m12 = m1*m2/(m1+m2)
     xmin = None
+
+    vThree, dVthree = vF.axilrod(data['potential_ABC']) # 3 body potential
 
     if potential_AB in vList:
         mol1 = data['potential_params']["AB"][f"{potential_AB}"]  # potential parameters
@@ -813,6 +840,7 @@ def start(input_file):
     AB = Energy(mu=m12, npts=data['potential_params']["AB"]['npts'], xmin = xmin,
                 xmax = xmax, j = data['ji'])
     AB.turningPts(mol1_V,mol1['re'], v= data['vi']) # Assign attributies evals, rm, rp    
+
     if potential_BC in vList:
         mol2 = data['potential_params']["BC"][f"{potential_BC}"]
         if potential_BC == 'morse':
@@ -859,7 +887,8 @@ def start(input_file):
          'b': data['b'],'mol': AB, 'v1' : mol1_V, 'v2' : mol2_V, 'v3':mol3_V,
          'dv1' : mol1_dV,'dv2': mol2_dV, 'dv3': mol3_dV,
          're1' : mol1['re'], 're2': mol2['re'], 're3': mol3['re'],
-         'seed' : data['seed'], 'int': data['int_params']}
+         'seed' : data['seed'], 'int': data['int_params'], 
+         'vtrip' : vThree, 'dvtrip' : dVthree}
     return inputs
 
 ### Run a trajectory ###
@@ -875,7 +904,10 @@ if __name__ == '__main__':
     calc = start('example/h2_ca/inputs.json')
     traj = QCT(**calc)
     traj.runT(doplot = True)
+    print(traj.delta_e)
     # fig, ax = plt.subplots()
     # plotters.plot_e(traj, ax)
     # plt.show()
     print(util.get_results(traj))
+    ax1 = plotters.traj_3d(traj)
+    plt.show()   
