@@ -88,7 +88,8 @@ class Energy(object):
             rm = root_scalar(vbrot,bracket = [self.xmin,re]).root
             rp = root_scalar(vbrot,bracket = [re,self.xmax]).root
         except:
-            print('Initial turning points could not be found. Try adjusting your range or guess for "re."')
+            print('Initial turning points could not be found.'
+                  'Try adjusting your range or guess for "re," ensuring bound states exist.')
             # Show re guess compared with elev
             plt.plot(x,V(x))
             plt.plot(re,V(re), marker = 'o')
@@ -171,11 +172,13 @@ class QCT(object):
         self.v1 = kwargs.get('v1')
         self.v2 = kwargs.get('v2')
         self.v3 = kwargs.get('v3')
-        self.vtrip = kwargs.get('vtrip')
+        self.vtrip = kwargs.get('vt')
         self.dv1 = kwargs.get('dv1') 
         self.dv2 = kwargs.get('dv2')
         self.dv3 = kwargs.get('dv3')
-        self.dvtrip = kwargs.get('dvtrip')
+        self.dvtdr12 = kwargs.get('dvtdr12')
+        self.dvtdr32 = kwargs.get('dvtdr23')
+        self.dvtdr31 = kwargs.get('dvtdr31')
         self.rpi = kwargs.get('mol').get_rp()
         self.re1 = kwargs.get('re1')
         self.re2 = kwargs.get('re2')
@@ -428,17 +431,17 @@ class QCT(object):
         # Create f = (rho1x', rho1y', rho1z', rho2x', rho2y', rho2z', p1x', p1y', p1z', p2x', p2y', p2z')
         f = [p1x/mu12, p1y/mu12, p1z/mu12, p2x/mu123, p2y/mu123, p2z/mu123,
             -self.dv1(r12)*r12drho1x-self.dv2(r32)*r32drho1x-self.dv3(r31)*r31drho1x
-            -self.dvtrip(r12,r32,r31)*r12drho1x-self.dvtrip(r32,r31,r12)*r32drho1x-self.dvtrip(r31,r12,r32)*r31drho1x,
+            -self.dvtdr12(r12,r32,r31)*r12drho1x-self.dvtdr32(r12, r32, r31)*r32drho1x-self.dvtdr31(r12,r32,r31)*r31drho1x,
             -self.dv1(r12)*r12drho1y-self.dv2(r32)*r32drho1y-self.dv3(r31)*r31drho1y
-            -self.dvtrip(r12,r32,r31)*r12drho1y-self.dvtrip(r32,r31,r12)*r32drho1y-self.dvtrip(r31,r12,r32)*r31drho1y,
+            -self.dvtdr12(r12,r32,r31)*r12drho1y-self.dvtdr32(r12,r32,r31)*r32drho1y-self.dvtdr31(r12,r32,r31)*r31drho1y,
             -self.dv1(r12)*r12drho1z-self.dv2(r32)*r32drho1z-self.dv3(r31)*r31drho1z
-            -self.dvtrip(r12,r32,r31)*r12drho1z-self.dvtrip(r32,r31,r12)*r32drho1z-self.dvtrip(r31,r12,r32)*r31drho1z,
+            -self.dvtdr12(r12,r32,r31)*r12drho1z-self.dvtdr32(r12,r32,r31)*r32drho1z-self.dvtdr31(r12,r32,r31)*r31drho1z,
             -self.dv2(r32)*r32drho2x-self.dv3(r31)*r31drho2x
-            -self.dvtrip(r32,r31,r12)*r32drho2x-self.dvtrip(r31,r12,r32)*r31drho2x,
+            -self.dvtdr32(r12,r32,r31)*r32drho2x-self.dvtdr31(r12,r32,r31)*r31drho2x,
             -self.dv2(r32)*r32drho2y-self.dv3(r31)*r31drho2y
-            -self.dvtrip(r32,r31,r12)*r32drho2y-self.dvtrip(r31,r12,r32)*r31drho2y,
+            -self.dvtdr32(r12,r32,r31)*r32drho2y-self.dvtdr31(r12,r32,r31)*r31drho2y,
             -self.dv2(r32)*r32drho2z-self.dv3(r31)*r31drho2z
-            -self.dvtrip(r32,r31,r12)*r32drho2z-self.dvtrip(r31,r12,r32)*r31drho2z]
+            -self.dvtdr32(r12,r32,r31)*r32drho2z-self.dvtdr31(r12,r32,r31)*r31drho2z]
         return f 
 
     
@@ -498,6 +501,11 @@ class QCT(object):
         self.t = wsol.t
 
         En, Vn, Kn, Ln = self.hamiltonian(wn,p)
+        
+        self.delta_e = En[-1]-En[0]
+        if self.delta_e > 1e-4:
+            print(f'Energy not conserved less than 1e-4: {self.delta_e}.')
+            sys.exit()
 
         # plt.figure(1)
         # plt.plot(t, En, marker = '.', label = 'En')
@@ -685,210 +693,42 @@ class QCT(object):
         self.f_state = [vt, w, j_eff]
         self.f_p = [p1x[-1], p1y[-1], p1z[-1],
                     p2x[-1], p2y[-1], p2z[-1]]
-        self.delta_e = En[-1]-En[0]
         self.delta_p = Ln[-1] - Ln[0]
         self.E12, self.E32, self.E31 = E12, E32, E31
         return
 
-class Potential(object):
-    """
-    Potential functions.
-    """
-    def morse(self, de = 1.,alpha = 1.,re = 1.):
-        '''Usage:
-                V = morse(**kwargs)
-        
-        Return a one-dimensional morse potential:
-        V(r) = De*(1-exp(-a*(r-re)))^2 - De
-
-        Keyword arguments:
-        de, float
-            dissociation energy (depth)
-        alpha, float
-            returned from eVib function
-        re, float
-            equilibrium length
-        '''
-        V = lambda r: de*(1-np.exp(-alpha*(r-re)))**2 - de
-        dV = lambda r: 2*alpha*de*(1-np.exp(-alpha*(r-re)))*np.exp(-alpha*(r-re))
-        return V, dV
-    
-    def lj(self, m=12, n = 6, cm = 1., cn=1., **kwargs):
-        '''Usage:
-            V = lj(**kwargs)
-        
-        Return a one-dimensional general Lennard-Jones potential:
-        V(r) = cm/r^m - cn/r^n
-
-        Keyword arguments:
-        cn, float
-            long-range parameter
-        cm, float
-            short-range parameter
-        '''
-        V = lambda r: cm/r**(m)-cn/r**(n)
-        dV = lambda r: -m*cm/r**(m+1)+n*cn/r**(n+1)
-        return V, dV
-
-    def buckingham(self, a=1., b=1., c6 = 1., max = .1,**kwargs):
-        '''Usage:
-            V = buckingham(**kwargs)
-        Buckingham potentials tend to come back down at low r. 
-        We fix this by imposing xmin at the turning point "max."
-        Return a one-dimensional Buckingham potential:
-        V(r) = a*exp(-b*r) - c6/r^6 for r > r_x
-
-        Keyword arguments:
-        a, float
-            short-range multiplicative factor
-        b, float
-            short-range exponential factor
-        c6, float
-            dispersion coefficient
-        tp, float
-            guess of turning point
-        xmin, float
-            minimum of potential (cutoff at local maximum)        
-        xmax, float
-            maximum of potential
-
-        Outputs:
-        Buck, function
-            buckingham potential
-        dBuck, function
-            derivative of buckingham potential
-        xi, float
-            minimum x-value where Buck is defined
-        '''
-        Buck = lambda r: a*np.exp(-b*r) - c6/r**6
-        dBuck = lambda r: -a*b*np.exp(-b*r) + 6*c6/r**7
-        ddBuck = lambda r: a*b**2*np.exp(-b*r) - 6*7*c6/r**8
-
-        # Find the maximum of potential
-        xi = fsolve(dBuck,max)
-        
-        return Buck, dBuck, xi
-    
-    def axilrod(self,C = 0):
-        '''
-        Return Axilrod-Teller potential
-        
-        C = V*alpha1*alpha2*alpha3
-
-        V - Ionization energy 
-        alpha - atomic polarizability
-
-
-        '''
-        V = lambda r12,r23,r31: C*(1/(r12*r23*r31)**3 - 3*((r12**2-r23**2-r31**2)*
-                                                            (r23**2-r31**2-r12**2)*
-                                                            (r31**2-r12**2-r23**2))/
-                                                        8/(r12*r23*r31)**5)
-        
-        # Partial derivative w.r.t. x (symmetry between r12, r23, r31)
-        # dV = lambda x,y,z: -C*(3*((x**6 + x**4*(y**2 + z**2) - 
-        #                                     5*(y**2 - z**2)**2*(y**2 + z**2) + 
-        #                                     x**2*(3*y**4 + 2*y**2*z**2 + 3*z**4)))/
-        #                                 (8*x**6*y**5*z**5))
-        
-        dV = lambda x,y,z: -3*C*(x**6 + x**4*(y**2 + z**2) - 
-                            5*(y**2 - z**2)**2*(y**2 + z**2) + 
-                            x**2*(3*y**4 + 2*y**2*z**2 + 3*z**4))/(8*x**6*y**5*z**5)
-        return V, dV
-    
-    
-
 ### make potentials ### 
-def start(input_file):
+def start(input_path):
     ''' Takes input data and makes the potential object.
     input_file, str
         directory to JSON input file
     '''
-    with open(f'{input_file}') as f:
+    sys.path.insert(0, input_path) # Add example input to path
+    import input_v 
+    with open(f'{input_path}/inputs.json') as f:
         data = json.load(f)
-    potential_AB = data['potential_AB'] # which potential
-    potential_BC = data['potential_BC']
-    potential_CA = data['potential_CA']
-    vList = ['morse','buck','lj']
-    vF = Potential()
+    
     m1,m2,m3 = data['masses'].values() # masses
     m12 = m1*m2/(m1+m2)
-    xmin = None
 
-    vThree, dVthree = vF.axilrod(data['potential_ABC']) # 3 body potential
-
-    if potential_AB in vList:
-        mol1 = data['potential_params']["AB"][f"{potential_AB}"]  # potential parameters
-        if potential_AB == 'morse':
-            mol1_V, mol1_dV = vF.morse(**mol1)
-        elif potential_AB == 'lj':
-            mol1_V, mol1_dV = vF.lj(**mol1)
-            mol1['re'] = fsolve(mol1_dV,mol1['re'])
-        elif potential_AB == 'buck':
-            mol1_V, mol1_dV, xmin= vF.buckingham(**mol1)
-            mol1['re'] = fsolve(mol1_dV,mol1['re'])
-        if xmin == None:
-            xmin = data['potential_params']["AB"]['xmin'] 
-        xmax = data['potential_params']["AB"]['xmax']
-    else: # numerical
-        mol1 = {}
-        xvals, mol1_V, mol1_dV, mol1['re'] = util.numToV(f'{potential_AB}') # Find V, dV via spline
-        xmin = min(xvals)
-        xmax = max(xvals)
+    mol1_V, mol1_dV, re1 = input_v.v12, input_v.dv12, input_v.req_12
+    mol2_V, mol2_dV, re2 = input_v.v23, input_v.dv23, input_v.req_23
+    mol3_V, mol3_dV, re3 = input_v.v31, input_v.dv31, input_v.req_31
 
     # Create energy object according to chosen potential
-    AB = Energy(mu=m12, npts=data['potential_params']["AB"]['npts'], xmin = xmin,
-                xmax = xmax, j = data['ji'])
-    AB.turningPts(mol1_V,mol1['re'], v= data['vi']) # Assign attributies evals, rm, rp    
-
-    if potential_BC in vList:
-        mol2 = data['potential_params']["BC"][f"{potential_BC}"]
-        if potential_BC == 'morse':
-            mol2_V, mol2_dV = vF.morse(**mol2)
-        elif potential_BC == 'lj':
-            mol2_V, mol2_dV = vF.lj(**mol2)
-            mol2['re'] = fsolve(mol2_dV,mol2['re'])
-        elif potential_BC == 'buck':
-            mol2_V, mol2_dV, _ = vF.buckingham(**mol2)
-            mol2['re'] = fsolve(mol2_dV,mol2['re'])
-    else:
-        mol2 = {}
-        r_bc, mol2_V, mol2_dV, mol2['re'] = util.numToV(f'{potential_BC}')
-        # Ensure calculation is within bounds of potential data 
-        if data['r0'] < min(r_bc):
-            print(f'Initial distance must be greater than minimum r value provided ({min(r_bc)}).')
-            sys.exit()
-        if data['int_params']['r_stop'] > max(r_bc):
-            print(f'Stop condition too large! Ensure "r_stop" <= maximum r value of potential ({max(r_bc)}).')
-            sys.exit()
-    if potential_CA in vList:
-        mol3 = data['potential_params']["CA"][f"{potential_CA}"]
-        if potential_CA == 'morse':
-            mol3_V, mol3_dV = vF.morse(**mol3)
-        elif potential_CA == 'lj':
-            mol3_V, mol3_dV = vF.lj(**mol3)
-            mol3['re'] = fsolve(mol3_dV,mol3['re'])
-        elif potential_CA == 'buck':
-            mol3_V, mol3_dV, _ = vF.buckingham(**mol3)
-            mol3['re'] = fsolve(mol3_dV,mol3['re'])
-    else:
-        mol3 = {}
-        r_ca, mol3_V, mol3_dV, mol3['re'] = util.numToV(f'{potential_CA}')
-        # Ensure calculation is within bounds of potential data 
-        if data['r0'] < min(r_ca):
-            print(f'Initial distance must be greater than minimum r value provided ({min(r_bc)}).')
-            sys.exit()
-        if data['int_params']['r_stop'] > max(r_ca):
-            print(f'Stop condition too large! Ensure "r_stop" < maximum r value of potential ({max(r_ca)}).')
+    AB = Energy(mu=m12, npts=len(input_v.r12), xmin = input_v.r12.min(),
+                xmax = input_v.r12.max(), j = data['ji'])
+    AB.turningPts(mol1_V, re1, v= data['vi']) # Assign attributes evals, rm, rp    
 
     # Calculate relevant attributes
     inputs = {'m1' : m1, 'm2': m2, 'm3': m3, 
          'd0' : data['r0'], 'e0' : data['Ec (K)']*constants.cEK2H,
-         'b': data['b'],'mol': AB, 'v1' : mol1_V, 'v2' : mol2_V, 'v3':mol3_V,
+         'b': data['b'], 'mol': AB, 'v1' : mol1_V, 'v2' : mol2_V, 'v3':mol3_V,
          'dv1' : mol1_dV,'dv2': mol2_dV, 'dv3': mol3_dV,
-         're1' : mol1['re'], 're2': mol2['re'], 're3': mol3['re'],
+         're1' : re1, 're2': re2, 're3': re3,
          'seed' : data['seed'], 'int': data['int_params'], 
-         'vtrip' : vThree, 'dvtrip' : dVthree}
+         'vt' : input_v.vTrip, 'dvtdr12' : input_v.dv123dR12, 
+         'dvtdr23': input_v.dv123dR23 , 'dvtdr31': input_v.dv123dR31}
     return inputs
 
 ### Run a trajectory ###
@@ -901,7 +741,7 @@ def main(plot = False,**kwargs):
 
 if __name__ == '__main__':
     from pyqcams import plotters
-    calc = start('example/h2_ca/inputs.json')
+    calc = start('example/h2_ca/') # make input dictionary
     traj = QCT(**calc)
     traj.runT(doplot = True)
     print(traj.delta_e)
