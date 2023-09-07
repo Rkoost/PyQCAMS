@@ -1,14 +1,19 @@
 import numpy as np
 from scipy.optimize import fsolve
+import sys
 import pyqcams.vFactory as vF
 
 
-# Diatomic potentials and their derivatives.
-# Samples of the 3 analytic potentials are given, uncomment for use.
+# sys.path.insert(0, '.')
+# import pyqcams.vFactory as vF
 
-v12, dv12= vF.morse(de = 0.16456603489, re = 1.40104284795, alpha = 1.059493476908482)  # H2
-v23, dv23= vF.morse(de = 0.06529228457, re = 3.79079033313, alpha = 0.6906412379896358) # CaH
-v31, dv31= vF.morse(de = 0.06529228457, re = 3.79079033313, alpha = 0.6906412379896358) # CaH
+# Samples of the vFactory potentials for CaH2 are given, uncomment for use.
+
+# Diatomic potentials and their derivatives.
+
+# v12, dv12= vF.morse(de = 0.16456603489, re = 1.40104284795, alpha = 1.059493476908482)  # H2
+# v23, dv23= vF.morse(de = 0.06529228457, re = 3.79079033313, alpha = 0.6906412379896358) # CaH
+# v31, dv31= vF.morse(de = 0.06529228457, re = 3.79079033313, alpha = 0.6906412379896358) # CaH
 
 # v12, dv12= vF.lj(cm = 64.16474114146757, cn = 6.49902670540583931313)  # H2
 # v23, dv23= vF.lj(cm = 38365.980245558436, cn = 100.1) # CaH
@@ -17,50 +22,55 @@ v31, dv31= vF.morse(de = 0.06529228457, re = 3.79079033313, alpha = 0.6906412379
 # v12, dv12, xmin12 = vF.buckingham(a = 167205.03207304262,b= 8.494089813101883, 
 #                          c6= 6.49902670540583931313, re= 1.6,max= 0.2)  # H2
 # v23, dv23, xmin23 = vF.buckingham(a= 508.162571320063,b =2.820905669626857,
-#                          c6=100.1, re= 3.1, max= 2) # CaH
+#                          c6=100.1, max= 2) # CaH
 # v31, dv31, xmin31 = vF.buckingham(a= 508.162571320063,b =2.820905669626857,
-#                          c6=100.1, re= 3.1, max= 2) # CaH
+#                          c6=100.1, max= 2) # CaH
+
+# Polyatomic fit to ab initio data (10.1063/1.462163)
+c12 = [(-6.48477958e-01,1), (6.20604981e-01,2),(-2.42153657e-01,3),(4.87242893e-02, 4),
+       (-5.17469520e-03,5), (2.44721392e-04,6), (-2.80778902e-07,8)]
+c23 = [ (-1.60984437e+01,1), (3.48288096e+01,2), (-3.17593909e+01,3),  (1.55108703e+01,4), 
+       (-4.19952982e+00,5),(5.41459871e-01,6), (-6.62095667e-03,8), (9.23374170e-05,10), (-6.83472726e-07,12)]
+c31 = [ (-1.60984437e+01,1), (3.48288096e+01,2), (-3.17593909e+01,3),  (1.55108703e+01,4), 
+       (-4.19952982e+00,5),(5.41459871e-01,6), (-6.62095667e-03,8), (9.23374170e-05,10), (-6.83472726e-07,12)]
+v12, dv12 = vF.poly2(1.07964274e+00, 2.34532220e+00, 4.36857937e-02, c12)
+v23, dv23 = vF.poly2(2.01524188e+01,  1.60763936e+00,  7.91913435e-02, c23)
+v31, dv31 = vF.poly2(2.01524188e+01,  1.60763936e+00,  7.91913435e-02, c31)
 
 
 # Range of potentials
-# NOTE: if using Buckingham potential, set xmin at left turning point
+# If using Buckingham potential, set xmin at returned value from vF.buckingham()
 r12 = np.linspace(0.5, 20, 1000) # min, max, number of points
 r23 = np.linspace(2, 20, 1000)
 r31 = np.linspace(2, 20, 1000)
 
 # Equilibrium point solutions are required for each diatomic potential.
 # Use best guess as 2nd argument of fsolve.
-req_12 = fsolve(dv12, 1.6) # H2
-req_23 = fsolve(dv23, 2) # CaH
-req_31 = fsolve(dv31, 2) # CaH
+req_12 = fsolve(dv12, 1.0) # H2
+req_23 = fsolve(dv23, 3.0) # CaH
+req_31 = fsolve(dv31, 3.0) # CaH
 
-# Three-body PES. This example uses the Axilrod-Teller potential, 
-# which is available in vFactory, but written as a lambda function here. 
-C = 10 # 0 to turn of 3-body interaction
+# Three-body PES. 
 
-def vTrip(r12, r23, r31):
-    V = C*(1/(r12*r23*r31)**3 - 3*((r12**2-r23**2-r31**2)*
-                                (r23**2-r31**2-r12**2)*
-                                (r31**2-r12**2-r23**2))/
-                                8/(r12*r23*r31)**5) 
-    return V
+# Axilrod-Teller potential.
+# C = 10 
+# v123, dv123dR12, dv123dR23, dv123dR31 = vF.axilrod(C)
 
-# vTrip = lambda r12,r23,r31: C*(1/(r12*r23*r31)**3 - 3*((r12**2-r23**2-r31**2)*
-#                                                        (r23**2-r31**2-r12**2)*
-#                                                        (r31**2-r12**2-r23**2))/
-#                                                         8/(r12*r23*r31)**5) 
+# Polyatomic fit to ab initio data (10.1063/1.462163)
 
-dv123dR12 = lambda r12,r23,r31: -3*C*(r12**6 + r12**4*(r23**2 + r31**2) - 
-            5*(r23**2 - r31**2)**2*(r23**2 + r31**2) + 
-            r12**2*(3*r23**4 + 2*r23**2*r31**2 + 3*r31**4))/(8*r12**6*r23**5*r31**5)
+# Sample of a tentative 3 - body fitting function
+pow = ['111','110','011','120','021', 
+       '201','121','211','220','022', 
+       '130','031','301','221','122', 
+       '131','311','230','032','302']
+d =    [ 0.07317053,  0.1589012 , -0.05797962,
+       -0.2932295 ,  0.21494367, -0.02749947,  0.0301055 , -0.01672027,
+        0.02517304, -0.04913106,  0.06304716, -0.05665921,  0.00181586,
+        0.00548205, -0.00252834, -0.0096243 , -0.00168267, -0.00582695,
+        0.01406624,  0.00116524]
+coeff = list(zip(d,[[int(j) for j in i] for i in pow]))
 
-dv123dR23= lambda r12,r23,r31: -3*C*(r23**6 + r23**4*(r31**2 + r12**2) - 
-            5*(r31**2 - r12**2)**2*(r31**2 + r12**2) + 
-            r23**2*(3*r31**4 + 2*r31**2*r12**2 + 3*r12**4))/(8*r23**6*r31**5*r12**5)
-
-dv123dR31= lambda r12,r23,r31: -3*C*(r31**6 + r31**4*(r12**2 + r23**2) - 
-            5*(r12**2 - r23**2)**2*(r12**2 + r23**2) + 
-            r31**2*(3*r12**4 + 2*r12**2*r23**2 + 3*r23**4))/(8*r31**6*r12**5*r23**5)
+v123, dv123dr12, dv123dr23, dv123dr31 = vF.poly3(0.07756418,  0.09746985, 0.09746985, coeff)
 
 if __name__ == '__main__':
     # Take a look at the potentials, make sure we have a good guess for re. 
@@ -76,3 +86,16 @@ if __name__ == '__main__':
     plt.ylabel(r'V ($E_H$)')
     plt.show()
 
+    N = 100
+    rab = np.linspace(r12.min(), r12.max(), N)
+    rbc = np.linspace(r23.min(), r23.max(), N)    
+    rca = np.linspace(r31.min(), r31.max(), N)    
+    X, Y = np.meshgrid(rab, rbc)
+    Z = v123(X,Y,0.5)   # Keep r31 constant
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')    
+    ax.plot_surface(X, Y, Z)    # Plot 3d surface
+    ax.set_xlabel(r'$r_{12}$')
+    ax.set_ylabel(r'$r_{23}$')
+    ax.set_zlabel(r'V ($E_H$)')
+    plt.show()
