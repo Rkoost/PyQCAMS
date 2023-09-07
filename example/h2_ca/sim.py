@@ -1,13 +1,13 @@
 import numpy as np
 # import pyqcams.util as utils
 import os
-from pyqcams import pymar, psave
+from pyqcams import main, psave
 
 if __name__ == '__main__':
-    calc = pymar.start('inputs.json') # Calculated parameters for main function
+    calc = main.start('example/h2_ca/') # Calculated parameters for main function
 
-    n_traj = 10 # Number of trajectories
-    out_file = f'example/results_short.csv'
+    n_traj = 100 # Number of trajectories
+    out_file = f'example/h2_ca/results_short.csv'
     cpus = os.cpu_count() # Number of cpus for parallel calculation
     bvals = np.arange(0,1,.25) # Range of impact parameters
 
