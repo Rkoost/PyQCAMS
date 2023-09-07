@@ -6,7 +6,7 @@ Methods to run parallel trajectories and save short or long.
 import os
 import multiprocess as mp
 import pandas as pd
-from . import pymar
+from pyqcams import main
 
 def save_long(n_traj,cpus,calc,out_file):
     '''
@@ -19,12 +19,12 @@ def save_long(n_traj,cpus,calc,out_file):
     cpus, int
         number of cpus for parallel calculation
     calc, dict
-        output from pymar.start() function
+        output from main.start() function
     out_file, string
         output file name
     '''
     with mp.Pool(processes = cpus) as p:
-        event = [p.apply_async(pymar.main, kwds = (calc)) for i in range(n_traj)]
+        event = [p.apply_async(main.main, kwds = (calc)) for i in range(n_traj)]
         for res in event:
             df = pd.DataFrame([res.get()])
             df.to_csv(out_file, mode = 'a', index = False, 
@@ -44,13 +44,13 @@ def save_short(n_traj,cpus,calc,out_file):
     cpus, int
         number of cpus for parallel calculation
     calc, dict
-        output from pymar.start() function
+        output from main.start() function
     out_file, string
         output file name
     '''
     result = []
     with mp.Pool(processes = cpus) as p:
-        event = [p.apply_async(pymar.main, kwds = (calc)) for i in range(n_traj)]
+        event = [p.apply_async(main.main, kwds = (calc)) for i in range(n_traj)]
         for res in event:
             result.append(res.get())
     df = pd.DataFrame(result)
@@ -60,5 +60,5 @@ def save_short(n_traj,cpus,calc,out_file):
     return
 
 if __name__ == '__main__':
-    calc = pymar.start('inputs.json')
+    calc = main.start('example/h2_ca/')
     
