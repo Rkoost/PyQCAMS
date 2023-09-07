@@ -60,8 +60,9 @@ def get_results(a):
             'diss': a.count[3],  # dissociation
             'comp': a.count[4], # complex
             'v': a.f_state[0], # final vib num
-            'w': a.f_state[1], # weight
+            'vw': a.f_state[1], # vib weight
             'j': a.f_state[2], # final j
+            'jw': a.f_state[3], # rot weight
             'd_i': a.d, # initial distance
             'theta': a.ang[0], # initial angles
             'phi': a.ang[1], 
