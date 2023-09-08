@@ -2,12 +2,15 @@
 Python Quasi-Classical Atom-Molecule Scattering, a Python package for atom-molecule scattering within the quasi-classical trajectory approach. 
 
 ## Installation
+To install, navigate into the root directory of the repository and run
 ```python
-pip install PyQCAMS
+python setup.py install
 ``` 
 
 ## Usage
-<p>The `example` folder contains a full example for simulating the reaction H<sub>2</sub> + Ca. </p> 
+<p>The `example` folder contains a full example for simulating the reaction H<sub>2</sub> + Ca. 
+Two input files are needed ``inputs.json`` for calculation parameters and ``input_v.py`` for potential functions.
+</p> 
 
 
 ## Data
