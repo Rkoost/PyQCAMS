@@ -9,7 +9,7 @@ python setup.py install
 
 ## Usage
 <p>The `example` folder contains a full example for simulating the reaction H<sub>2</sub> + Ca. 
-Two input files are needed ``inputs.json`` for calculation parameters and ``input_v.py`` for potential functions.
+Two input files are needed `inputs.json` for calculation parameters and `input_v.py` for potential functions.
 </p> 
 
 
