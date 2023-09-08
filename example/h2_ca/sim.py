@@ -1,10 +1,10 @@
 import numpy as np
 # import pyqcams.util as utils
 import os
-from pyqcams import main, psave
+from pyqcams import pymar, psave
 
 if __name__ == '__main__':
-    calc = main.start('example/h2_ca/') # Calculated parameters for main function
+    calc = pymar.start('example/h2_ca/') # Calculated parameters for main function
 
     n_traj = 100 # Number of trajectories
     out_file = f'example/h2_ca/results_short.csv'
