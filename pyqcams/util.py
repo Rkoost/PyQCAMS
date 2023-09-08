@@ -125,10 +125,10 @@ def numToV(file):
     return num_x, num_V, num_dV, num_re
 
 if __name__ == '__main__':
-    from pyqcams import main
+    from pyqcams import pymar
     import matplotlib.pyplot as plt
-    calc = main.start('example/h2_ca/')
-    traj = main.QCT(**calc)
+    calc = pymar.start('example/h2_ca/')
+    traj = pymar.QCT(**calc)
     bd = bound(traj.v2, 1,traj.mu12, traj.re1)
     print(bd)
     x = np.linspace(1,13,500)
