@@ -627,10 +627,11 @@ class QCT(object):
         vt = 0
         vw = 0
         j_eff = 0
+        jw = 0
         # AB + C -> AB + C
 
         # Boundary is raised by centrifugal term 
-        if bd12 != None and E12[-1] < bd12.any():
+        if bd12.any() != None and E12[-1] < bd12.any():
             if E32[-1] > 0 and E31[-1] > 0: # Ensure an intermediate complex isn't formed
                 # Find final (v, j)
                 # Calculate the turning points of the new energy
@@ -651,7 +652,7 @@ class QCT(object):
             else:
                 comp += 1
         # AB + C -> BC + A
-        elif bd32 != None and E32[-1]  < bd32.any():
+        elif bd32.any() != None and E32[-1]  < bd32.any():
             if E12[-1] > 0 and E31[-1] > 0:
                 vp = self.vPrime(jeff = j32_eff[-1], mu = self.mu32, V = self.v2, dV = self.dv2, E = E32[-1], re = self.re2)
                 if vp == None:
@@ -670,7 +671,7 @@ class QCT(object):
             else:
                 comp += 1
         # AB + C -> AC + B
-        elif bd31 != None and E31[-1]  < bd31.any():
+        elif bd31.any() != None and E31[-1]  < bd31.any():
             if E32[-1] > 0 and E12[-1] > 0:
                 vp = self.vPrime(jeff = j31_eff[-1], mu = self.mu31, V = self.v3, dV = self.dv3, E = E31[-1], re = self.re3)
                 if vp == None:
