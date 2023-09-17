@@ -44,6 +44,8 @@ def bound(v, j, mu, re):
             if bdry.size == 0:
                  # No bound states exist, set bound to None
                  bdry = None
+            else:
+                bdry = max(bdry) # If multiple peaks found, pick largest value
     return bdry
 
 
@@ -131,12 +133,12 @@ if __name__ == '__main__':
     traj = pymar.QCT(**calc)
     bd = bound(traj.v2, 1,traj.mu12, traj.re1)
     print(bd)
-    x = np.linspace(1,13,500)
-    # jlist = np.linspace(0,50,5)
-    jlist = [2]
+    x = np.linspace(.5,20,500)
+    # jlist = np.linspace(0,50,15)
+    jlist = [20]
     for j in jlist:
         bd = bound(traj.v1,j,traj.mu12,traj.re1)
         plt.plot(x, traj.v1(x) + j*(j+1)/2/traj.mu12/x**2, label = f'j = {j}, bd = {bd}')
-        plt.plot(np.full_like(x,bd))
+        plt.hlines(bd,x.min(),x.max(), color = 'orange')
     plt.legend()
     plt.show()

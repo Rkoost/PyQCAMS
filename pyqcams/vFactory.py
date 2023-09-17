@@ -13,7 +13,7 @@ def morse(de = 1.,alpha = 1.,re = 1.):
     de, float
         dissociation energy (depth)
     alpha, float
-        returned from eVib function
+        alpha = we*sqrt(mu/2De)
     re, float
         equilibrium length
     '''

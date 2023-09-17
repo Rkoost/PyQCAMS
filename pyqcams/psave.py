@@ -60,6 +60,6 @@ def save_short(n_traj,cpus,calc,out_file):
 
 if __name__ == '__main__':
     N = 2
-    calc = pymar.start('example/h2_ca/')
-    save_short(N,os.cpu_count(),calc,'example/h2_ca/test_short.csv')
+    calc = pymar.start('.')
+    save_short(N,os.cpu_count(),calc,'test_short.txt')
     
