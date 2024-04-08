@@ -1,144 +1,108 @@
-import os
-import warnings
 import numpy as np
-from scipy.signal import find_peaks
-from scipy.interpolate import InterpolatedUnivariateSpline
-import pandas as pd
-from pyqcams import constants
+import warnings
+from scipy.optimize import root_scalar
+from pyqcams.qct import *
+from pyqcams.constants import *
 
-def gaus(vp , vt, s=0.1):
-            ''' Gaussian function used for Gaussian Binning of final vibrational states.
-            Inputs:
-            vp, float
-                vPrime output, some number between integers
-            vt, int
-                target vibrational quantum number. 
-            s, float
-                sigma or FWHM of Gaussian
 
-            Returns:
-            w, float 
-                W(vp,vt) which associates a weight to a vibrational product state
-            '''
-            w = np.exp(-np.abs(vp-vt)**2/2/s**2)
-            w *= 1/np.sqrt(2*np.pi)/s
-            return w
-            
-
-def bound(v, j, mu, re):
-    ''' Finds the new boundary for higher j values
-    Purpose:
-        For higher j values, the "bound" condition changes
-        from E < 0 to E < j*(j+1)/2/mu/ro**2
-        This function finds r_o at which this boundary is created.
+def jac2cart(x, C1, C2):
     '''
-    if j == 0:
-        bdry = 0
-    else:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")    
-            v_eff = lambda r: v(r) + j*(j+1)/2/mu/r**2
-            vx = np.linspace(re, re+10, 1000).flatten()
-            ro, _ = find_peaks(v_eff(vx))
-            bdry = v_eff(vx[ro])
-            if bdry.size == 0:
-                 # No bound states exist, set bound to None
-                 bdry = None
-            else:
-                bdry = max(bdry) # If multiple peaks found, pick largest value
-    return bdry
-
-
-def get_results(a):
-    '''Get long output from trajectory
-    a, object
-        trajectory object containing relevant attributes
+    Jacobian to Cartesian coordinate system. 
+    x contains all Jacobi position vectors,
+    C1 = m1/(m1+m2)
+    C2 = m2/(m1+m2)
     '''
-    results = {'e': a.e0/constants.cEK2H, # energy
-            'b': a.b, # impact param   
-            'q': a.count[0], # quench
-            'r1': a.count[1], # reaction 1
-            'r2': a.count[2], # reaction 2
-            'diss': a.count[3],  # dissociation
-            'comp': a.count[4], # complex
-            'v': a.f_state[0], # final vib num
-            'vw': a.f_state[1], # vib weight
-            'j': a.f_state[2], # final j
-            'jw': a.f_state[3], # rot weight
-            'd_i': a.d, # initial distance
-            'theta': a.ang[0], # initial angles
-            'phi': a.ang[1], 
-            'eta': a.ang[2], 
-            'n_i': a.n_vib, # initial vib num
-            'j_i': a.j, # initial j 
-            'rho1x': a.r[0][-1], # final positions
-            'rho1y': a.r[1][-1],
-            'rho1z': a.r[2][-1],
-            'rho2x': a.r[0][-1],
-            'rho2y': a.r[1][-1],
-            'rho2z': a.r[2][-1],
-            'p1x': a.f_p[0], # final momentum 
-            'p1y': a.f_p[1],
-            'p1z': a.f_p[2],
-            'p2x': a.f_p[3],
-            'p2y': a.f_p[4],
-            'p2z': a.f_p[5],
-            'tf': a.t[-1]} # final time
+    rho1x, rho1y, rho1z, rho2x, rho2y, rho2z = x
     
+    # Internuclear distances 
+    r12 = np.sqrt(rho1x**2+rho1y**2+rho1z**2)
+    r23 = np.sqrt((rho2x - C1*rho1x)**2
+                + (rho2y - C1*rho1y)**2 
+                + (rho2z - C1*rho1z)**2)
+    r31 = np.sqrt((rho2x + C2*rho1x)**2
+                + (rho2y + C2*rho1y)**2 
+                + (rho2z + C2*rho1z)**2)
+    return r12, r23, r31    
+
+def hamiltonian(traj):
+        '''Hamiltonian; returns energy and angular momentum as a function of
+            internuclear distances and momenta.
+        Use:
+            Check for conservation of energy/momentum.
+
+        vi, function
+            potential describing initial molecule (H2)
+        vf, function
+            potential describing reaction-formed molecule (CaH)
+        w, list
+            state variables; w = [rho1x, rho1y, rho1z, rho2x, rho2y, rho2z,
+                                p1x, p1y, p1z, p2x, p2y, p2z]
+        p, list
+            state parameters; p = [traj.m1, traj.m2, traj.m3, traj.mu12, traj.mu23, traj.mu31]
+        Math:
+        E = KE + V = p^2/2m + V
+
+        Returns:
+        etot, float
+            total energy
+        ll, float
+            total angular momentum
+        ekin, float
+            kinetic energy
+        epot, foat
+            potential energy
+        '''
+        w = traj.wn
+
+        rho1x, rho1y, rho1z, rho2x, rho2y, rho2z, \
+            p1x, p1y, p1z, p2x, p2y, p2z = w
+        
+        r12,r23,r31 = jac2cart(w[:6],traj.C1,traj.C2)
+        
+        # Kinetic energy
+        ekin = 0.5*(p1x**2+p1y**2+p1z**2)/traj.mu12 \
+                + 0.5*(p2x**2+p2y**2+p2z**2)/traj.mu312
+
+        # Potential energy
+        epot = np.asarray(traj.v1(r12))+np.asarray(traj.v2(r23)) \
+             + np.asarray(traj.v3(r31)) + np.asarray(traj.vtrip(r12,r23,r31))
+
+        # Total energy
+        etot = ekin + epot
+
+        # Radial angular momenta
+        # Lx = Lx1 + Lx2
+
+        lx1 = rho1y*p1z - rho1z*p1y # Internal angular momentum
+        lx2 = rho2y*p2z - rho2z*p2y # Relative angular momentum
+        lx = lx1 + lx2 
+
+        ly1 = rho1z*p1x - rho1x*p1z
+        ly2 = rho2z*p2x - rho2x*p2z
+        ly = ly1 + ly2 
+
+        lz1 = rho1x*p1y - rho1y*p1x
+        lz2 = rho2x*p2y - rho2y*p2x
+        lz = lz1 + lz2 
+
+        ll = np.sqrt(lx**2 + ly**2 + lz**2)
+
+        return (etot, epot, ekin, ll)
+
+def get_results(traj, *args):
+    results =  {'e': traj.E0/K2Har,
+                'b': traj.b,
+                'vi': traj.vi,
+                'ji': traj.ji,
+                'n12': traj.count[0],
+                'n23': traj.count[1],
+                'n31': traj.count[2],
+                'nd': traj.count[3],
+                'nc': traj.count[4],
+                'v': traj.fstate[0],
+                'vw': f'{traj.fstate[1]:.3e}',
+                'j': traj.fstate[2],
+                'jw': f'{traj.fstate[3]:.3e}'}
+    for arg in args:
+         results[arg] = getattr(traj,arg)
     return results
-
-def numToV(file):
-    '''
-    Convert pdf table to potential function and first derivative.
-    Assumes positions in column 0, energy in column 1.
-
-    Inputs:
-
-    file, str
-        path to pdf file
-
-    Outputs:
-    num_x, list
-        x values of potential
-    num_V, function
-        interpolated potential
-    num_dV, function
-        interpolated potential derivative
-    num_re, float
-        equilibrium point (min of potential)
-    '''
-    try:
-        df = pd.read_csv(f'{file}',header = None, sep = None, engine='python')
-        num_x = np.array([float(i) for i in df[0][:].values.tolist()])
-        num_y = np.array([float(i) for i in df[1][:].values.tolist()])
-    except Exception as e:
-            print(e)
-            quit()
-    num_y -= num_y[-1] # Shift values to make curve approach 0 by setting final point to 0
-    num_V = InterpolatedUnivariateSpline(num_x,num_y, k = 4) # Use k = 4 to find roots of derivative
-    # Fit a c6/r^6 to the last 5 points
-    
-    num_dV = num_V.derivative()
-    cr_pts = num_dV.roots()
-    cr_pts = np.append(cr_pts, (num_x[0], num_x[-1]))  # also check the endpoints of the interval
-    cr_vals = num_V(cr_pts)
-    min_index = np.argmin(cr_vals)
-    num_re = cr_pts[min_index] # Equilibrium distance
-    return num_x, num_V, num_dV, num_re
-
-if __name__ == '__main__':
-    from pyqcams import pymar
-    import matplotlib.pyplot as plt
-    calc = pymar.start('example/h2_ca/')
-    traj = pymar.QCT(**calc)
-    bd = bound(traj.v2, 1,traj.mu12, traj.re1)
-    print(bd)
-    x = np.linspace(.5,20,500)
-    # jlist = np.linspace(0,50,15)
-    jlist = [20]
-    for j in jlist:
-        bd = bound(traj.v1,j,traj.mu12,traj.re1)
-        plt.plot(x, traj.v1(x) + j*(j+1)/2/traj.mu12/x**2, label = f'j = {j}, bd = {bd}')
-        plt.hlines(bd,x.min(),x.max(), color = 'orange')
-    plt.legend()
-    plt.show()

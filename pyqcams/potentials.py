@@ -2,16 +2,14 @@ import numpy as np
 from scipy.optimize import fsolve
 
 # Two body potentials
-def morse(de = 1.,alpha = 1.,re = 1.):
-    '''Usage:
-            V = morse(**kwargs)
-    
-    Return a one-dimensional morse potential:
+def morse(de = 1., alpha = 1., re = 1.):
+    '''
+    Return two-body morse potential:
     V(r) = De*(1-exp(-a*(r-re)))^2 - De
-
+    
     Keyword arguments:
     de, float
-        dissociation energy (depth)
+        dissociation energy
     alpha, float
         alpha = we*sqrt(mu/2De)
     re, float
@@ -21,11 +19,9 @@ def morse(de = 1.,alpha = 1.,re = 1.):
     dV = lambda r: 2*alpha*de*(1-np.exp(-alpha*(r-re)))*np.exp(-alpha*(r-re))
     return V, dV
 
-def lj(m=12, n = 6, cm = 1., cn=1., **kwargs):
-    '''Usage:
-        V = lj(**kwargs)
-    
-    Return a one-dimensional general Lennard-Jones potential:
+def lj(m=12,n=6,cm=1,cn=1):
+    '''
+    Return a general Lennard-Jones potential:
     V(r) = cm/r^m - cn/r^n
 
     Keyword arguments:
@@ -38,7 +34,7 @@ def lj(m=12, n = 6, cm = 1., cn=1., **kwargs):
     dV = lambda r: -m*cm/r**(m+1)+n*cn/r**(n+1)
     return V, dV
 
-def buckingham(a=1., b=1., c6 = 1., max = .1,**kwargs):
+def buckingham(a=1., b=1., c6 = 1., max = .1):
     '''Usage:
         V = buckingham(**kwargs)
     Buckingham potentials tend to come back down at low r. 
@@ -68,7 +64,6 @@ def buckingham(a=1., b=1., c6 = 1., max = .1,**kwargs):
     '''
     Buck = lambda r: a*np.exp(-b*r) - c6/r**6
     dBuck = lambda r: -a*b*np.exp(-b*r) + 6*c6/r**7
-    ddBuck = lambda r: a*b**2*np.exp(-b*r) - 6*7*c6/r**8
 
     # Find the maximum of potential
     xi = fsolve(dBuck,max)
@@ -89,11 +84,11 @@ def poly2(c0, alpha, b, coeff):
     '''
     v_long = lambda x: sum([i*((x*np.exp(-b*x))**j) for i, j in coeff])
     v_short = lambda x: c0*np.exp(-alpha*x)/x 
-    v = lambda x: v_long(x) + v_short(x)
+    V = lambda x: v_long(x) + v_short(x)
     dv_long = lambda x: sum([i*(-j*(b*x-1)*x**(j-1)*np.exp(-j*b*x)) for i, j in coeff])
     dv_short = lambda x: -c0*(1+alpha*x)*(np.exp(-alpha*x)/x**2)
-    dv = lambda x: dv_long(x) + dv_short(x)
-    return v, dv
+    dV = lambda x: dv_long(x) + dv_short(x)
+    return V, dV
 
 # Three body potentials
 def axilrod(C = 0):
@@ -124,7 +119,6 @@ def axilrod(C = 0):
             5*(r12**2 - r23**2)**2*(r12**2 + r23**2) + 
             r31**2*(3*r12**4 + 2*r12**2*r23**2 + 3*r23**4))/(8*r31**6*r12**5*r23**5)
     return V, dvdR12, dvdR23, dvdR31
-
 
 def poly3(b_12, b_23, b_31, coeffs):
     '''
