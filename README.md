@@ -8,8 +8,26 @@ pip install .
 ``` 
 
 ## Usage
-<p>The <code>example</code> folder contains a full example for simulating the reaction H<sub>2</sub> + Ca. 
-An input dictionary containing atomic masses, interaction potentials, collision parameters, and integration parameters is used to run trajectories on atom-molecule systems. 
+<p>The <code>example</code> folder contains a full example for simulating the reaction H<sub>2</sub> + Ca. To run a trajectory, an input dictionary is required containing the following keywords:
+
+1. m1, m2, m3: Atomic masses (a.u.)
+2. E0: Collision energy (K)
+3. b0: Impact parameter (Bohr)
+4. R0: Initial distance (Bohr)
+5. seed: Random number generator seed (default: None)
+6. mol_12, mol_23, mol_31: Molecule class objects. mol_12 assumed to be initial bound molecule.
+7. Vt, dVtdr12, dVtdr23, dVtdr31: Three-body interaction term (Hartree) and associated partial derivatives.
+8. integ[t_stop, r_stop, r_tol, a_tol, econs, lcons]: Integration parameters. Respectively, stopping condition for time as a multiple of collision timescale, stopping condition for distance as a multiple of initial distance, relative and absolute error tolerance for integrator, energy and momentum conservation in atomic units.
+
+The <code>Molecule</code> class is used to generate the three possible molecules, where the two-particle interactions are defined. Create three molecules to place in the input dictionary. For example, an H$_2$ molecule is generated:
+```python
+m1 = 1.008*constants.u2me
+m2 = 1.008*constants.u2me
+v12, dv12 = potentials.morse(de = 0.16, re = 1.4, alpha = 1.06)
+mol12 = qct.Molecule(mi = m1, mj = m2, Vij = v12, dVij = dv12, vi = 0, ji = 0,
+                     xmin = .5, xmax = 30, npts=1000)
+``` 
+where `mi,mj` are the masses (a.u.), `vi,ji` represent the initial rovibrational state, and `Vij, dVij` represent the two-body interaction and its derivative. `xmax, xmin` represent the region of interaction, and `npts` is the number of grid points used in the DVR to calculate the energy spectrum. To bypass the DVR step, the internal energy can be added using the argument `Ei`. 
 </p> 
 
 ## Output
@@ -23,7 +41,7 @@ An input dictionary containing atomic masses, interaction potentials, collision 
 
 ## Analysis
 <p> We provide an <code>analysis</code> library with functions to calculate opacity, cross section, and rate coefficients of an outcome. They take the long output file as input. These have options for state-specific and non state-specific results.
-The opacity function is a unitless probability, the cross section is in $`\mathrm{cm^2}`$, and the reaction rate coefficient is in $`\mathrm{cm^3/s}`$. 
+The opacity function is a unitless probability, the cross section is in $\mathrm{cm^2}$, and the reaction rate coefficient is in $\mathrm{cm^3/s}$. 
 </p>
 
 ## Data
