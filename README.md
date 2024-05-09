@@ -19,7 +19,7 @@ pip install .
 7. Vt, dVtdr12, dVtdr23, dVtdr31: Three-body interaction term (Hartree) and associated partial derivatives.
 8. integ[t_stop, r_stop, r_tol, a_tol, econs, lcons]: Integration parameters. Respectively, stopping condition for time as a multiple of collision timescale, stopping condition for distance as a multiple of initial distance, relative and absolute error tolerance for integrator, energy and momentum conservation in atomic units.
 
-The <code>Molecule</code> class is used to generate the three possible molecules, where the two-particle interactions are defined. Create three molecules to place in the input dictionary. For example, an H$_2$ molecule is generated:
+The <code>Molecule</code> class is used to generate the three possible molecules, where the two-particle interactions are defined. Create three molecules to place in the input dictionary. For example, an $H_2$ molecule is generated:
 ```python
 m1 = 1.008*constants.u2me
 m2 = 1.008*constants.u2me
