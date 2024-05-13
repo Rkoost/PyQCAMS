@@ -1,5 +1,5 @@
 import numpy as np
-from pyqcams2 import qct, constants, potentials
+from pyqcams import qct, constants, potentials
 
 # Masses
 m1 = 1.008*constants.u2me
